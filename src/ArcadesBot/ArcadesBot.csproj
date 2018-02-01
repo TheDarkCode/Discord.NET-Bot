@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Apis.Customsearch.v1" Version="1.27.0.466" />
+    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.27.0.760" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Scripting" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ArcadesBot.Core\ArcadesBot.Core.csproj" />
+  </ItemGroup>
+
+</Project>
