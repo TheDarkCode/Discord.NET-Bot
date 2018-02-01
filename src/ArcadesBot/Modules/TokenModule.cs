@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Discord.WebSocket;
 using Microsoft.CodeAnalysis.Semantics;
 
+// Very WIP and unfinished
+
 namespace ArcadesBot.Modules
 {
     [Name("Tokens")]
