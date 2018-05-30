@@ -9,8 +9,7 @@ namespace ArcadesBot
     {
         [JsonIgnore]
         public static string FileName { get; private set; } = "config/config.json";
-
-        public int RelatedTagsLimit { get; set; } = 3;
+        public string DefaultPrefix { get; private set; } = "%";
         public AuthTokens Token { get; set; } = new AuthTokens();
         public CustomSearchConfig CustomSearch { get; set; } = new CustomSearchConfig();
         

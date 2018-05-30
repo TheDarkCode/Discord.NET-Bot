@@ -31,7 +31,7 @@ namespace ArcadesBot
                 typeof(List<>).GetTypeInfo().Assembly,
                 typeof(IGuild).GetTypeInfo().Assembly,
                 typeof(SocketGuild).GetTypeInfo().Assembly,
-                typeof(ArcadesBot.IEntity<>).GetTypeInfo().Assembly
+                typeof(ConfigModel).GetTypeInfo().Assembly
             )
             .AddImports(
                 "System",

@@ -23,7 +23,7 @@ namespace ArcadesBot.Modules
         [Command]
         public async Task HelpAsync()
         {
-            string prefix = (await Context.Guild.GetPrefixAsync()) ?? $"@{Context.Client.CurrentUser.Username} ";
+            string prefix = "%" ?? $"@{Context.Client.CurrentUser.Username} ";
             var modules = _commands.Modules.Where(x => !string.IsNullOrWhiteSpace(x.Summary));
 
             var embed = new EmbedBuilder()
@@ -56,7 +56,7 @@ namespace ArcadesBot.Modules
         [Command]
         public async Task HelpAsync(string moduleName)
         {
-            string prefix = (await Context.Guild.GetPrefixAsync()) ?? $"@{Context.Client.CurrentUser.Username} ";
+            string prefix = "%" ?? $"@{Context.Client.CurrentUser.Username} ";
             var module = _commands.Modules.FirstOrDefault(x => x.Name.ToLower() == moduleName.ToLower());
 
             if (moduleName[0].ToString() == prefix)
@@ -102,7 +102,7 @@ namespace ArcadesBot.Modules
         private async Task HelpAsync(string moduleName, string commandName)
         {
             string alias = $"{commandName}".ToLower();
-            string prefix = (await Context.Guild.GetPrefixAsync()) ?? $"@{Context.Client.CurrentUser.Username} ";
+            string prefix = "%" ?? $"@{Context.Client.CurrentUser.Username} ";
             var module = _commands.Modules.FirstOrDefault(x => x.Name.ToLower() == moduleName.ToLower());
 
             if (module == null)

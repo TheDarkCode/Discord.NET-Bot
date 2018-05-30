@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Discord.Commands;
 
 namespace ArcadesBot
 {
@@ -13,5 +15,9 @@ namespace ArcadesBot
         }
         public static string MultipleOrNot(string input, ulong amount)
             => amount == 1 ? $"{input}" : $"{input}s";
+
+        public static string ParametersInfo(IReadOnlyCollection<ParameterInfo> Parameters)
+            => Parameters.Any() ?
+            string.Join(" ", Parameters.Select(x => x.IsOptional ? $" `<(Optional){x.Name}>` " : $" `<{x.Name}>` ")) : null;
     }
 }

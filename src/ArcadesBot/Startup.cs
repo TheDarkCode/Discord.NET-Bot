@@ -6,7 +6,9 @@ using Google.Apis.Customsearch.v1;
 using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
 using Microsoft.Extensions.DependencyInjection;
+using Raven.Client.Documents;
 using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace ArcadesBot
@@ -17,16 +19,23 @@ namespace ArcadesBot
         {
             var config = Configuration.Load();
             var services = new ServiceCollection()
-                .AddDbContext<ConfigDatabase>(ServiceLifetime.Transient)
-                .AddDbContext<TokenDatabase>(ServiceLifetime.Transient)
-                .AddDbContext<ChessDatabase>(ServiceLifetime.Transient)
-                .AddTransient<TokenManager>()
+                .AddSingleton<IDocumentStore>(new DocumentStore
+                {
+                    Certificate = DatabaseHandler.DBConfig.Certificate,
+                    Database = DatabaseHandler.DBConfig.DatabaseName,
+                    Urls = new[] { DatabaseHandler.DBConfig.DatabaseUrl }
+                }.Initialize())
                 .AddSingleton<CommandManager>()
                 .AddSingleton<RoslynManager>()
                 .AddSingleton<Random>()
                 .AddSingleton(config)
                 .AddSingleton<IAssetService, AssetService>()
-                .AddSingleton<IChessService, ChessService>(s => new ChessService(s.GetService<IAssetService>(), s.GetService<ChessDatabase>(), s.GetService<ConfigDatabase>()))
+                .AddSingleton<HttpClient>()
+                .AddSingleton<GuildHandler>()
+                .AddSingleton<GuildHelper>()
+                .AddSingleton<ConfigHandler>()
+                .AddSingleton<DatabaseHandler>()
+                //.AddSingleton<IChessService, ChessService>(s => new ChessService(s.GetService<IAssetService>(), s.GetService<ChessDatabase>(), s.GetService<ConfigDatabase>()))
                 .AddSingleton<ChessGame, ChessGame>();
 
             // Discord

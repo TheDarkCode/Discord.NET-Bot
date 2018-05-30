@@ -21,7 +21,7 @@ namespace ArcadesBot
 
             var manager = services.GetService<CommandManager>();
             await manager.StartAsync();
-
+            await services.GetRequiredService<DatabaseHandler>().DatabaseCheck();
             await Task.Delay(-1);
         }
     }
