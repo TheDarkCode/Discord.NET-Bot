@@ -19,7 +19,7 @@ namespace ArcadesBot
         {
             var config = Configuration.Load();
             var services = new ServiceCollection()
-                .AddSingleton<IDocumentStore>(new DocumentStore
+                .AddSingleton(new DocumentStore
                 {
                     Certificate = DatabaseHandler.DBConfig.Certificate,
                     Database = DatabaseHandler.DBConfig.DatabaseName,
@@ -29,14 +29,18 @@ namespace ArcadesBot
                 .AddSingleton<RoslynManager>()
                 .AddSingleton<Random>()
                 .AddSingleton(config)
-                .AddSingleton<IAssetService, AssetService>()
+                .AddSingleton<ChessHelper>()
                 .AddSingleton<HttpClient>()
-                .AddSingleton<GuildHandler>()
+                .AddSingleton<AssetService>()
+                .AddSingleton<ChessService>()
+                .AddSingleton<WebhookService>()
                 .AddSingleton<GuildHelper>()
+                .AddSingleton<WebhookService>()
+                .AddSingleton<ChessHandler>()
+                .AddSingleton<GuildHandler>()
                 .AddSingleton<ConfigHandler>()
                 .AddSingleton<DatabaseHandler>()
-                //.AddSingleton<IChessService, ChessService>(s => new ChessService(s.GetService<IAssetService>(), s.GetService<ChessDatabase>(), s.GetService<ConfigDatabase>()))
-                .AddSingleton<ChessGame, ChessGame>();
+                .AddSingleton<ChessGame>();
 
             // Discord
             await LoadDiscordAsync(services);

@@ -14,7 +14,7 @@ namespace ArcadesBot.Modules
     {
         private readonly Process _process;
 
-        public InfoModule(IAssetService assetService)
+        public InfoModule()
         {
             _process = Process.GetCurrentProcess();
         }

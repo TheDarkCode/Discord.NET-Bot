@@ -18,9 +18,6 @@ namespace ArcadesBot
             GuildHandler = guildHandler;
         }
 
-        string ProfanityRegex { get => @"\b(f+u+c+k+|b+i+t+c+h+|w+h+o+r+e+|c+u+n+t+|a+s+s+|n+i+g+g+|f+a+g+|g+a+y+|p+u+s+s+y+)(w+i+t+|e+r+|i+n+g+|h+o+l+e+)?\b"; }
-        string InviteRegex { get => @"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?(d+i+s+c+o+r+d+|a+p+p)+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$"; }
-
         public IMessageChannel DefaultChannel(ulong GuildId)
         {
             var Guild = Client.GetGuild(GuildId);
@@ -59,18 +56,17 @@ namespace ArcadesBot
 
         public (bool, ulong) GetRoleId(SocketGuild Guild, string Role)
         {
-            if (string.IsNullOrWhiteSpace(Role)) return (true, 0);
+            if (string.IsNullOrWhiteSpace(Role))
+                return (true, 0);
             UInt64.TryParse(Role.Replace('<', ' ').Replace('>', ' ').Replace('@', ' ').Replace('&', ' ').Replace(" ", ""), out ulong Id);
             var GetRole = Guild.GetRole(Id);
-            if (GetRole != null) return (true, Id);
+            if (GetRole != null)
+                return (true, Id);
             var FindRole = Guild.Roles.FirstOrDefault(x => x.Name.ToLower() == Role.ToLower());
-            if (FindRole != null) return (true, FindRole.Id);
+            if (FindRole != null)
+                return (true, FindRole.Id);
             return (false, 0);
         }
-
-        public bool InviteMatch(string Message) => CheckMatch(InviteRegex).Match(Message).Success;
-
-        public Regex CheckMatch(string Pattern) => new Regex(Pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public (bool, string) ListCheck<T>(List<T> Collection, object Value, string ObjectName, string CollectionName)
         {

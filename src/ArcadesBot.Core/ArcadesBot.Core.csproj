@@ -6,12 +6,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ChessDotNet" Version="0.9.5.5" />
     <PackageReference Include="Discord.Net" Version="2.0.0-beta2-00964" />
     <PackageReference Include="RavenDB.Client" Version="4.0.4-patch-40038" />
     <PackageReference Include="SixLabors.Core" Version="1.0.0-beta0004" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0002" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta0002" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="ChessDotNet">
+      <HintPath>..\..\..\Chess.NET\ChessDotNet\bin\Debug\ChessDotNet.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

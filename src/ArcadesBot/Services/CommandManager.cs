@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ArcadesBot
@@ -15,6 +16,10 @@ namespace ArcadesBot
         private readonly CommandService _commands;
         private readonly GuildHelper _guildhelper;
         private readonly GuildHandler _guildhandler;
+        private readonly WebhookService _webhookservice;
+        private readonly ConfigHandler _confighandler;
+        private CancellationTokenSource _cancellationToken;
+        private Random _random;
 
         //private readonly IChessService _chessService;
         //private readonly ConfigDatabase _manager;
@@ -27,6 +32,10 @@ namespace ArcadesBot
             _commands = _provider.GetService<CommandService>();
             _guildhelper = _provider.GetService<GuildHelper>();
             _guildhandler = _provider.GetService<GuildHandler>();
+            _webhookservice = _provider.GetService<WebhookService>();
+            _confighandler = _provider.GetService<ConfigHandler>();
+            _cancellationToken = new CancellationTokenSource();
+            _random = _provider.GetService<Random>();
             //_chessService = _provider.GetService<IChessService>();
             //_manager = _provider.GetService<ConfigDatabase>();
         }
@@ -38,6 +47,11 @@ namespace ArcadesBot
             _discord.MessageReceived += CommandHandlerAsync;
             _discord.LeftGuild += LeftGuild;
             _discord.GuildAvailable += GuildAvailable;
+            _discord.Disconnected += Disconnected;
+            _discord.MessageDeleted += MessageDeletedAsync;
+            _discord.JoinedGuild += JoinedGuildAsync;
+            _discord.UserJoined += UserJoinedAsync;
+            _discord.UserLeft += UserLeftAsync;
 
             PrettyConsole.Log(LogSeverity.Info, "Commands", $"Loaded {_commands.Modules.Count()} modules with {_commands.Commands.Count()} commands");
         } 
@@ -113,5 +127,87 @@ namespace ArcadesBot
         internal Task GuildAvailable(SocketGuild Guild) 
             => Task.Run(() 
                 => _guildhandler.AddGuild(Guild.Id, Guild.Name));
+        internal Task Disconnected(Exception Error)
+        {
+            _ = Task.Delay(TimeSpan.FromSeconds(5), _cancellationToken.Token).ContinueWith(async _ =>
+            {
+                PrettyConsole.Log(LogSeverity.Info, "Connection Manager", $"Checking connection state...");
+                await CheckStateAsync();
+            });
+            return Task.CompletedTask;
+        }
+        internal async Task CheckStateAsync()
+        {
+            if (_discord.ConnectionState == ConnectionState.Connected)
+                return;
+
+            var Timeout = Task.Delay(TimeSpan.FromSeconds(30));
+            var Connect = _discord.StartAsync();
+            var LocalTask = await Task.WhenAny(Timeout, Connect);
+
+            if (LocalTask == Timeout || Connect.IsFaulted)
+                Environment.Exit(1);
+            else if (Connect.IsCompletedSuccessfully)
+            {
+                PrettyConsole.Log(LogSeverity.Info, "Connection Manager", "Client Reset Completed.");
+                return;
+            }
+            else
+                Environment.Exit(1);
+        }
+        internal Task Connected()
+        {
+            _cancellationToken.Cancel();
+            _cancellationToken = new CancellationTokenSource();
+            PrettyConsole.Log(LogSeverity.Info, "Connected", "Connected to Discord.");
+            return Task.CompletedTask;
+        }
+        internal async Task MessageDeletedAsync(Cacheable<IMessage, ulong> Cache, ISocketMessageChannel Channel)
+        {
+            var Config = _guildhandler.GetGuild((Channel as SocketGuildChannel).Guild.Id);
+            var Message = await Cache.GetOrDownloadAsync();
+            if (Message == null || Config == null || !Config.Mod.LogDeletedMessages || Message.Author.IsBot) return;
+            Config.DeletedMessages.Add(new MessageWrapper
+            {
+                ChannelId = Channel.Id,
+                MessageId = Message.Id,
+                AuthorId = Message.Author.Id,
+                DateTime = Message.Timestamp.DateTime,
+                Content = Message.Content ?? Message.Attachments.FirstOrDefault()?.Url
+            });
+            _guildhandler.Save(Config);
+        }
+        internal async Task JoinedGuildAsync(SocketGuild Guild)
+        {
+            _guildhandler.AddGuild(Guild.Id, Guild.Name);
+            await Guild.DefaultChannel.SendMessageAsync(_confighandler.Config.JoinMessage ?? "Thank you for inviting me to your server!");
+        }
+
+        internal async Task UserLeftAsync(SocketGuildUser User)
+        {
+            var Config = _guildhandler.GetGuild(User.Guild.Id);
+            await _webhookservice.SendMessageAsync(new WebhookOptions
+            {
+                Name = _discord.CurrentUser.Username,
+                Webhook = Config.LeaveWebhook,
+                Message = !Config.LeaveMessages.Any() ? $"**{User.Username}** abandoned us!"
+                : StringHelper.Replace(Config.LeaveMessages[_random.Next(0, Config.LeaveMessages.Count)], User.Guild.Name, User.Username)
+            });
+        }
+
+        internal async Task UserJoinedAsync(SocketGuildUser User)
+        {
+            var Config = _guildhandler.GetGuild(User.Guild.Id);
+            await _webhookservice.SendMessageAsync(new WebhookOptions
+            {
+                Name = _discord.CurrentUser.Username,
+                Webhook = Config.JoinWebhook,
+                Message = !Config.JoinMessages.Any() ? $"**{User.Username}** is here to rock our world! Yeah, baby!"
+                : StringHelper.Replace(Config.JoinMessages[_random.Next(0, Config.JoinMessages.Count)], User.Guild.Name, User.Mention)
+            });
+            var Role = User.Guild.GetRole(Config.Mod.JoinRole);
+            if (Role != null)
+                await User.AddRoleAsync(Role).ConfigureAwait(false);
+        }
     }
 }
