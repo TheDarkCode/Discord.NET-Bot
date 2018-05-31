@@ -38,9 +38,10 @@ namespace ArcadesBot
             PrettyConsole.Log(LogSeverity.Info, "AddGuild", string.IsNullOrWhiteSpace(Name) ? $"Added Server With Id: {Id}" : $"Created Config For {Name}");
         }
 
-        public void Save(GuildModel Server)
+        public void Update(GuildModel Server)
         {
-            if (Server == null) return;
+            if (Server == null)
+                return;
             using (var Session = Store.OpenSession())
             {
                 Session.Store(Server, Server.Id);

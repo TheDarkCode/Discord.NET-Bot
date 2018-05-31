@@ -36,10 +36,22 @@ namespace ArcadesBot
                 $"+ Join Role           : @{StringHelper.CheckRole(Context.Guild as SocketGuild, Context.Server.Mod.JoinRole)}\n" +
                 $"+ Mute Role           : @{StringHelper.CheckRole(Context.Guild as SocketGuild, Context.Server.Mod.MuteRole)}\n" +
                 $"+ Blacklisted Users   : {Context.Server.Profiles.Where(x => x.Value.IsBlacklisted).Count()}\n" +
+                $"+ Blacklisted Channels: {Context.Server.BlackListedChannels.Count}\n" +
                 $"```", false)
                .Build();
             return ReplyAsync(string.Empty, Embed);
         }
+
+        [Command("Blacklist"), Summary("Blacklist the current channel or mentioned channel if specified")]
+        public async Task ToggleBlackListAsync(SocketTextChannel channel = null)
+        {
+            channel = channel ?? Context.Channel as SocketTextChannel;
+            if (Context.GuildHelper.ToggleBlackList(Context.Server, channel.Id))
+                await ReplyAsync($"{channel.Mention} was added to the blacklist", Document: DocumentType.Server);
+            else
+                await ReplyAsync($"{channel.Mention} was removed from the blacklist" , Document: DocumentType.Server);
+        }
+
         [Command("Setup"), Summary("Set ups the bot for your server.")]
         public async Task SetupAsync()
         {

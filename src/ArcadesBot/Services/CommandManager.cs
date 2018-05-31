@@ -89,18 +89,22 @@ namespace ArcadesBot
             
             var Context = new CustomCommandContext(_discord, Msg, _provider);
             if (Context.Config.Blacklist.Contains(Msg.Author.Id) || _guildhelper.GetProfile(Context.Guild.Id, Context.User.Id).IsBlacklisted
-                || Msg.Author.IsBot) return;
+                || Msg.Author.IsBot || Context.Server.BlackListedChannels.Contains(Context.Channel.Id))
+                return;
             if (!(Msg.HasStringPrefix(Context.Config.Prefix, ref argPos) || Msg.HasStringPrefix(Context.Server.Prefix, ref argPos) ||
-                Msg.HasMentionPrefix(Context.Client.CurrentUser, ref argPos)) || Msg.Source != MessageSource.User) return;
+                Msg.HasMentionPrefix(Context.Client.CurrentUser, ref argPos)) || Msg.Source != MessageSource.User)
+                return;
             var result = await _commands.ExecuteAsync(Context, argPos, _provider, MultiMatchHandling.Best);
             var search = _commands.Search(Context, argPos);
             var command = search.IsSuccess ? search.Commands.FirstOrDefault().Command : null;
             switch (result.Error)
             {
-                case CommandError.Exception: PrettyConsole.Log(LogSeverity.Error, "", result.ErrorReason);
+                case CommandError.Exception:
+                    PrettyConsole.Log(LogSeverity.Error, "Exception", result.ErrorReason);
                     break;
                 case CommandError.UnmetPrecondition:
-                    if (!result.ErrorReason.Contains("SendMessages")) await Context.Channel.SendMessageAsync(result?.ErrorReason);
+                    if (!result.ErrorReason.Contains("SendMessages"))
+                        await Context.Channel.SendMessageAsync(result?.ErrorReason);
                     break;
                 case CommandError.BadArgCount:
                     string Name = command.Module != null && command.Name.Contains("Async")
@@ -175,7 +179,7 @@ namespace ArcadesBot
                 DateTime = Message.Timestamp.DateTime,
                 Content = Message.Content ?? Message.Attachments.FirstOrDefault()?.Url
             });
-            _guildhandler.Save(Config);
+            _guildhandler.Update(Config);
         }
         internal async Task JoinedGuildAsync(SocketGuild Guild)
         {

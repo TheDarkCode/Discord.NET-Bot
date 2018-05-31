@@ -10,47 +10,72 @@ namespace ArcadesBot
 {
     public class GuildHelper
     {
-        GuildHandler GuildHandler { get; }
-        DiscordSocketClient Client { get; }
+        private GuildHandler _guildHandler { get; }
+        private DiscordSocketClient _client { get; }
         public GuildHelper(GuildHandler guildHandler, DiscordSocketClient client)
         {
-            Client = client;
-            GuildHandler = guildHandler;
+            _client = client;
+            _guildHandler = guildHandler;
         }
 
         public IMessageChannel DefaultChannel(ulong GuildId)
         {
-            var Guild = Client.GetGuild(GuildId);
+            var Guild = _client.GetGuild(GuildId);
             return Guild.TextChannels.FirstOrDefault(x => x.Name.Contains("general") || x.Name.Contains("lobby") || x.Id == Guild.Id) ?? Guild.DefaultChannel;
         }
 
-        public UserProfile GetProfile(ulong GuildId, ulong UserId)
+        public UserProfile GetProfile(ulong guildId, ulong userId)
         {
-            var Guild = GuildHandler.GetGuild(Client.GetGuild(GuildId).Id);
-            if (!Guild.Profiles.ContainsKey(UserId))
+            var Guild = _guildHandler.GetGuild(_client.GetGuild(guildId).Id);
+            if (!Guild.Profiles.ContainsKey(userId))
             {
-                Guild.Profiles.Add(UserId, new UserProfile());
-                GuildHandler.Save(Guild);
-                return Guild.Profiles[UserId];
+                Guild.Profiles.Add(userId, new UserProfile());
+                _guildHandler.Update(Guild);
+                return Guild.Profiles[userId];
             }
-            return Guild.Profiles[UserId];
+            return Guild.Profiles[userId];
+        }
+        /// <param name="guildId">The Guild's ID</param>
+        /// <param name="channelId">The Channel's ID</param>
+        /// <returns>
+        /// true = Added
+        /// false = Removed
+        /// </returns>
+        public bool ToggleBlackList(GuildModel Guild, ulong channelId)
+        {
+            if (!Guild.BlackListedChannels.Contains(channelId))
+            {
+                Guild.BlackListedChannels.Add(channelId);
+                _guildHandler.Update(Guild);
+                return true;
+            }
+            else
+            {
+                Guild.BlackListedChannels.Remove(channelId);
+                _guildHandler.Update(Guild);
+                return false;
+            }
+            
         }
 
         public void SaveProfile(ulong GuildId, ulong UserId, UserProfile Profile)
         {
-            var Config = GuildHandler.GetGuild(GuildId);
+            var Config = _guildHandler.GetGuild(GuildId);
             Config.Profiles[UserId] = Profile;
-            GuildHandler.Save(Config);
+            _guildHandler.Update(Config);
         }
 
         public (bool, ulong) GetChannelId(SocketGuild Guild, string Channel)
         {
-            if (string.IsNullOrWhiteSpace(Channel)) return (true, 0);
+            if (string.IsNullOrWhiteSpace(Channel))
+                return (true, 0);
             UInt64.TryParse(Channel.Replace('<', ' ').Replace('>', ' ').Replace('#', ' ').Replace(" ", ""), out ulong Id);
             var GetChannel = Guild.GetTextChannel(Id);
-            if (GetChannel != null) return (true, Id);
+            if (GetChannel != null)
+                return (true, Id);
             var FindChannel = Guild.TextChannels.FirstOrDefault(x => x.Name == Channel.ToLower());
-            if (FindChannel != null) return (true, FindChannel.Id);
+            if (FindChannel != null)
+                return (true, FindChannel.Id);
             return (false, 0);
         }
 

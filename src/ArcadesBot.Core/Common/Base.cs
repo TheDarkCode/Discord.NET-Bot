@@ -28,7 +28,7 @@ namespace ArcadesBot
                     Check = !Context.Session.Advanced.HasChanges;
                     break;
                 case DocumentType.Server:
-                    Context.GuildHandler.Save(Context.Server);
+                    Context.GuildHandler.Update(Context.Server);
                     Check = !Context.Session.Advanced.HasChanges;
                     break;
             }
