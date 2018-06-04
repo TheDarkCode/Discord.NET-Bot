@@ -6,15 +6,24 @@ namespace ArcadesBot
 {
     public class ConfigHandler
     {
-        IDocumentStore Store { get; }
-        public ConfigHandler(IDocumentStore store) => Store = store;
-        public ConfigModel Config { get { using (var Session = Store.OpenSession()) return Session.Load<ConfigModel>("Config"); } }
+        private IDocumentStore Store { get; }
+        public ConfigHandler(IDocumentStore store) 
+            => Store = store;
+        public ConfigModel Config
+        {
+            get
+            {
+                using (var Session = Store.OpenSession())
+                    return Session.Load<ConfigModel>("Config");
+            }
+        }
 
-        public void ConfigCheck()
+        public ConfigModel ConfigCheck()
         {
             using (var Session = Store.OpenSession())
             {
-                if (Session.Advanced.Exists("Config")) return;
+                if (Session.Advanced.Exists("Config"))
+                    return Config;
                 PrettyConsole.Log(LogSeverity.Info, "Arcade's Bot", "Enter Bot's Token:");
                 string Token = Console.ReadLine();
                 PrettyConsole.Log(LogSeverity.Info, "Arcade's Bot", "Enter Bot's Prefix:");
@@ -27,12 +36,14 @@ namespace ArcadesBot
                 });
                 Session.SaveChanges();
             }
+            return Config;
         }
 
         public void Save(ConfigModel GetConfig = null)
         {
             GetConfig = GetConfig ?? Config;
-            if (GetConfig == null) return;
+            if (GetConfig == null)
+                return;
             using (var Session = Store.OpenSession())
             {
                 Session.Store(GetConfig, "Config");

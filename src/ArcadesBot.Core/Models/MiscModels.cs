@@ -15,6 +15,7 @@ namespace ArcadesBot
     public class UserProfile
     {
         public bool IsBlacklisted { get; set; }
+        public MutedInfo MutedInfo { get; set; } = new MutedInfo();
         public Dictionary<string, int> Commands { get; set; } = new Dictionary<string, int>();
     }
     public class WebhookOptions
@@ -36,5 +37,11 @@ namespace ArcadesBot
         public ulong MuteRole { get; set; }
         public ulong TextChannel { get; set; }
         public bool LogDeletedMessages { get; set; }
+    }
+    public class MutedInfo
+    {
+        public bool IsMuted { get; set; } = false;
+        public DateTime? MutedUntill { get; set; } = null;
+        public List<ulong> Roles { get; set; } = null;
     }
 }

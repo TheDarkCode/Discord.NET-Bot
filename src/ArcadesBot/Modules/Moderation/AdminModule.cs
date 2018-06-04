@@ -76,7 +76,7 @@ namespace ArcadesBot
         }
 
         [Command("Set"), Summary("Sets certain values for current server's config.")]
-        public Task SetAsync(SettingType SettingType, [Remainder] string Value = null)
+        public Task SetAsync([Summary("Valid setting types are: \n - Prefix\n - JoinChannel\n - JoinRole\n - MuteRole\n - LeaveChannel")]SettingType SettingType, [Remainder, Summary("The value of the setting you are changing")] string Value = null)
         {
             Value = Value ?? string.Empty;
             var IntCheck = int.TryParse(Value, out int Result);
@@ -154,36 +154,40 @@ namespace ArcadesBot
         }
 
         [Command("SelfRoles"), Summary("Adds/Removes role to/from self assingable roles.")]
-        public Task SelfRoleAsync(string Action, IRole Role)
+        public Task SelfRoleAsync([Summary("Valid actions are:\n - add\n - remove")]string Action, [Remainder, Summary("The role you want to add or remove")]IRole Role)
         {
-            if (Role == Context.Guild.EveryoneRole) return ReplyAsync($"Role can't be everyone role.");
+            if (Role == Context.Guild.EveryoneRole)
+                return ReplyAsync($"Role can't be everyone role.");
             var Check = Context.GuildHelper.ListCheck(Context.Server.AssignableRoles, Role.Id, Role.Name, "assignable roles");
             switch (Action.ToLower())
             {
                 case "a":
                 case "add":
-                    if (!Check.Item1) return ReplyAsync(Check.Item2);
+                    if (!Check.Item1)
+                        return ReplyAsync(Check.Item2);
                     Context.Server.AssignableRoles.Add(Role.Id);
                     return ReplyAsync(Check.Item2, Document: DocumentType.Server);
                 case "remove":
                 case "rem":
                 case "r":
-                    if (!Context.Server.AssignableRoles.Contains(Role.Id)) return ReplyAsync($"{Role.Name} isn't an assignable role !");
+                    if (!Context.Server.AssignableRoles.Contains(Role.Id))
+                        return ReplyAsync($"{Role.Name} isn't an assignable role !");
                     Context.Server.AssignableRoles.Remove(Role.Id);
                     return ReplyAsync($"`{Role.Name}` is no longer an assignable role.", Document: DocumentType.Server);
             }
             return Task.CompletedTask;
         }
 
-        [Command("JoinMessages"), Summary("Add/Removes join message. {user} to mention user. {guild} to print server name.")]
-        public Task JoinMessagesAsync(string Action, [Remainder] string Message)
+        [Command("JoinMessages"), Summary("Add/Removes join message.\n{user} to mention user.\n{guild} to print server name.")]
+        public Task JoinMessagesAsync([Summary("Valid actions are:\n - add\n - remove")]string Action, [Remainder, Summary("The message you want to add or remove")] string Message)
         {
             var Check = Context.GuildHelper.ListCheck(Context.Server.JoinMessages, Message, $"```{Message}```", "join messages");
             switch (Action.ToLower())
             {
                 case "a":
                 case "add":
-                    if (!Check.Item1) return ReplyAsync(Check.Item2);
+                    if (!Check.Item1)
+                        return ReplyAsync(Check.Item2);
                     Context.Server.JoinMessages.Add(Message);
                     return ReplyAsync("Join message has been added.", Document: DocumentType.Server);
                 case "remove":
@@ -197,14 +201,15 @@ namespace ArcadesBot
         }
 
         [Command("LeaveMessages"), Summary("Add/Removes leave message. {user} to mention user. {guild} to print server name.")]
-        public Task LeaveMessagesAsync(string Action, [Remainder] string Message)
+        public Task LeaveMessagesAsync([Summary("Valid actions are:\n - add\n - remove")]string Action, [Remainder, Summary("The message you want to add or remove")] string Message)
         {
             var Check = Context.GuildHelper.ListCheck(Context.Server.LeaveMessages, Message, $"```{Message}```", "leave messages");
             switch (Action)
             {
                 case "a":
                 case "add":
-                    if (!Check.Item1) return ReplyAsync(Check.Item2);
+                    if (!Check.Item1)
+                        return ReplyAsync(Check.Item2);
                     Context.Server.LeaveMessages.Add(Message);
                     return ReplyAsync("Leave message has been added.", Document: DocumentType.Server);
                 case "remove":
@@ -227,36 +232,6 @@ namespace ArcadesBot
             => ReplyAsync(!Context.Server.JoinMessages.Any() ? $"{Context.Server} doesn't have any user leave messages! " :
                 $"**Leave Messages**\n{string.Join("\n", $"-> {Context.Server.LeaveMessages}")}");
 
-        [Command("MessageLog"), Summary("Retrives messages from deleted messages.")]
-        public Task MessageLogAsync(int Recent = 0)
-        {
-            if (!Context.Server.DeletedMessages.Any() || Context.Server.DeletedMessages.Count < Recent)
-                return ReplyAsync("Failed to retrive deleted messages.");
-            var Get = Recent == 0 ? Context.Server.DeletedMessages.LastOrDefault() : Context.Server.DeletedMessages[Recent];
-            var User = StringHelper.CheckUser(Context.Client, Get.AuthorId);
-            var GetUser = (Context.Client as DiscordSocketClient).GetUser(Get.AuthorId);
-            var Embed = new EmbedBuilder()
-                .WithAuthor($"{User} - {Get.DateTime}", GetUser != null ? GetUser.GetAvatarUrl() : Context.Client.CurrentUser.GetAvatarUrl())
-                .WithDescription(Get.Content)
-                .WithFooter($"Channel: {StringHelper.CheckChannel(Context.Guild as SocketGuild, Get.ChannelId)} | Message Id: {Get.MessageId}");
-            return ReplyAsync(string.Empty, Embed.Build());
-        }
-
-        [Command("MessageLog"), Summary("Retrives messages from deleted messages.")]
-        public Task MessageLogAsync(SocketGuildUser User = null, int Recent = 0)
-        {
-            User = User ?? Context.User as SocketGuildUser;
-            if (!Context.Server.DeletedMessages.Any(x => x.AuthorId == User.Id)) return ReplyAsync($"Coudln't find any deleted messages from user {User.Username}.");
-            if (Context.Server.DeletedMessages.Where(x => x.AuthorId == User.Id).Count() < Recent) return ReplyAsync($"Failed to retrive message.");
-            var Get = Recent == 0 ? Context.Server.DeletedMessages.Where(x => x.AuthorId == User.Id).LastOrDefault()
-                : Context.Server.DeletedMessages.Where(x => x.AuthorId == User.Id).ToList()[Recent];
-            var GetUser = (Context.Client as DiscordSocketClient).GetUser(Get.AuthorId);
-            var Embed = new EmbedBuilder()
-                .WithAuthor($"{User} - {Get.DateTime}", GetUser != null ? GetUser.GetAvatarUrl() : Context.Client.CurrentUser.GetAvatarUrl())
-                .WithDescription(Get.Content)
-                .WithFooter($"Channel: {StringHelper.CheckChannel(Context.Guild as SocketGuild, Get.ChannelId)} | Message Id: {Get.MessageId}");
-            return ReplyAsync(string.Empty, Embed.Build());
-        }
         public enum SettingType
         {
             Prefix,

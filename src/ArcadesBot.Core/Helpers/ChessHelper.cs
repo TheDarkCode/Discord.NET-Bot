@@ -23,16 +23,10 @@ namespace ArcadesBot
             =>  _chessHandler.GetChallenges().Where(x => x.GuildId == guildId && x.ChannelId == channelId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId)).OrderByDescending(x => x.TimeoutDate).FirstOrDefault();
 
         public bool CheckPlayerInMatch(ulong guildId, ulong invokerId)
-        {
-            ulong number = 1;
-            return _chessHandler.GetMatches().Any(x => x.GuildId == guildId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId) && x.Winner == number);
-        }
+           =>  _chessHandler.GetMatches().Any(x => x.GuildId == guildId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId) && x.Winner == 1);
 
         public ChessMatchModel GetMatch(ulong guildId, ulong channelId, ulong invokerId)
-        {
-            ulong number = 1;
-            return  _chessHandler.GetMatches().FirstOrDefault(x => x.GuildId == guildId && x.ChannelId == channelId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId) && x.Winner == number);
-        }
+            =>  _chessHandler.GetMatches().FirstOrDefault(x => x.GuildId == guildId && x.ChannelId == channelId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId) && x.Winner == 1);
 
         public ChessMatchModel GetMatch(Guid? Id)
             =>  _chessHandler.GetMatches().FirstOrDefault(x => x.Id == $"{Id}");
@@ -56,7 +50,6 @@ namespace ArcadesBot
             if (matchStatus.Game.IsStalemated(player))
                 matchStatus.Match.Stalemate = true;
 
-            matchStatus.Match.ChessGame = null;
             _chessHandler.UpdateMatch(matchStatus.Match);
         }
 
@@ -74,7 +67,6 @@ namespace ArcadesBot
             ChessMatchModel chessMatch = GetMatch(guildId, channelId, invokerId);
             chessMatch.Winner = chessMatch.ChallengeeId == invokerId ? chessMatch.ChallengerId : chessMatch.ChallengeeId;
 
-            chessMatch.ChessGame = null;
             _chessHandler.UpdateMatch(chessMatch);
             return chessMatch.Winner;
         }

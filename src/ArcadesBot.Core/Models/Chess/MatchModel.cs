@@ -12,8 +12,6 @@ namespace ArcadesBot
         public ulong ChannelId { get; set; }
         public ulong ChallengerId { get; set; }
         public ulong ChallengeeId { get; set; }
-        public ChessGame ChessGame { get; set; }
-        public List<Move> MoveList { get; set; }
         public List<ChessMoveModel> HistoryList { get; set; }
         public string WhiteAvatarURL { get; set; }
         public string BlackAvatarURL { get; set; }

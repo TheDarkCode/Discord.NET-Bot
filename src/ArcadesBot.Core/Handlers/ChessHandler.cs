@@ -42,14 +42,12 @@ namespace ArcadesBot
                 Session.Store(new ChessMatchModel
                 {
                     Id = $"{id}",
-                    ChessGame = new ChessDotNet.ChessGame(),
                     ChallengerId = challenger,
                     ChallengeeId = challengee,
                     ChannelId = channelId,
                     GuildId = guildId,
                     WhiteAvatarURL = whiteAvatarURL,
                     BlackAvatarURL = blackAvatarURL,
-                    MoveList = new List<ChessDotNet.Move>(),
                     HistoryList = new List<ChessMoveModel>()
                 });
                 Session.SaveChanges();

@@ -88,7 +88,7 @@ namespace ArcadesBot
         [RequireContext(ContextType.Guild)]
         [Command("challenge")]
         [Summary("Challenge someone to a chess match")]
-        public async Task ChallengeAsync(IUser challengee)
+        public async Task ChallengeAsync([Summary("The person you want to challenge to a match of chess")]IUser challengee)
         {
             await Context.Channel.TriggerTypingAsync();
             SocketGuildUser user = challengee as SocketGuildUser;
@@ -144,7 +144,7 @@ namespace ArcadesBot
         [RequireContext(ContextType.Guild)]
         [Command("move")]
         [Summary("Moves a piece, if your pawn reaches the other side of the board it will be promoted to queen by default.\nYou can promote your pawn to other pieces if you like, r = Rook, b = Bishop, q = Queen, n = Knight. \nAn example move promoting a white pawn to a Knight would be **!a7a8n**")]
-        public async Task MoveAsync(string move)
+        public async Task MoveAsync([Summary("Move a piece on the board")]string move)
         {
             await Context.Channel.TriggerTypingAsync();
             try

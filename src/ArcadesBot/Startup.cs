@@ -17,7 +17,6 @@ namespace ArcadesBot
     {
         public async Task<IServiceProvider> ConfigureServices()
         {
-            var config = Configuration.Load();
             var services = new ServiceCollection()
                 .AddSingleton(new DocumentStore
                 {
@@ -25,10 +24,12 @@ namespace ArcadesBot
                     Database = DatabaseHandler.DBConfig.DatabaseName,
                     Urls = new[] { DatabaseHandler.DBConfig.DatabaseUrl }
                 }.Initialize())
+                .AddSingleton<ChessHandler>()
+                .AddSingleton<GuildHandler>()
+                .AddSingleton<ConfigHandler>()
                 .AddSingleton<CommandManager>()
                 .AddSingleton<RoslynManager>()
                 .AddSingleton<Random>()
-                .AddSingleton(config)
                 .AddSingleton<ChessHelper>()
                 .AddSingleton<HttpClient>()
                 .AddSingleton<AssetService>()
@@ -36,9 +37,6 @@ namespace ArcadesBot
                 .AddSingleton<WebhookService>()
                 .AddSingleton<GuildHelper>()
                 .AddSingleton<WebhookService>()
-                .AddSingleton<ChessHandler>()
-                .AddSingleton<GuildHandler>()
-                .AddSingleton<ConfigHandler>()
                 .AddSingleton<DatabaseHandler>()
                 .AddSingleton<ChessGame>();
 
@@ -52,7 +50,7 @@ namespace ArcadesBot
             return provider;
         }
 
-        private async Task LoadDiscordAsync(IServiceCollection services)
+        private Task LoadDiscordAsync(IServiceCollection services)
         {
             var discord = new DiscordSocketClient(new DiscordSocketConfig
             {
@@ -70,30 +68,27 @@ namespace ArcadesBot
             discord.Log += OnLogAsync;
             commands.Log += OnLogAsync;
 
-            await discord.LoginAsync(TokenType.Bot, Configuration.Load().Token.Discord);
-            await discord.StartAsync();
-
             services.AddSingleton(discord);
             services.AddSingleton(commands);
+            return Task.CompletedTask;
         }
         
         private Task LoadGoogleAsync(IServiceCollection services)
         {
-            var config = Configuration.Load();
+            var provider = new DefaultServiceProviderFactory().CreateServiceProvider(services);
 
-            var search = new CustomsearchService(new BaseClientService.Initializer()
-            {
-                ApiKey = config.CustomSearch.Token,
-                MaxUrlLength = 256
-            });
+            var config = provider.GetService<ConfigHandler>();
+            ConfigModel model;
+            if (config.Config == null)
+                model = config.ConfigCheck();
+            else
+                model = config.Config;
 
             var youtube = new YouTubeService(new BaseClientService.Initializer()
             {
-                ApiKey = config.Token.Google,
+                ApiKey = config.Config.APIKeys["Google"],
                 MaxUrlLength = 256
             });
-
-            services.AddSingleton(search);
             services.AddSingleton(youtube);
             return Task.CompletedTask;
         }

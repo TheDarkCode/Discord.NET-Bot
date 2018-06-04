@@ -26,18 +26,17 @@ namespace ArcadesBot
 
         public ulong WhoseTurn(ChessMatchStatusModel match)
         {
-            if (match.Match.ChessGame == null)
+            if (match.Game == null)
             {
-                if (match.Game.WhoseTurn != Player.White)
-                    return match.Match.ChallengeeId;
-                return match.Match.ChallengerId;
+                if (match.Match.HistoryList.Count == 0)
+                    match.Game = new ChessGame();
+                else
+                    match.Game = new ChessGame(match.Match.HistoryList.Select(x => x.Move), true);
             }
-            else
-            {
-                if (match.Match.ChessGame.WhoseTurn != Player.White)
-                    return match.Match.ChallengeeId;
-                return match.Match.ChallengerId;
-            }
+
+            if (match.Game.WhoseTurn != Player.White)
+                return match.Match.ChallengeeId;
+            return match.Match.ChallengerId;
         }
 
         private void DrawImage(IImageProcessingContext<Rgba32> processor, string name, int x, int y)
@@ -50,32 +49,38 @@ namespace ArcadesBot
         {
             ChessMatchModel match = null;
             match =  _chessHelper.GetMatch(Id);
-            if (match.ChessGame == null && match.MoveList == null)
+            if (match.HistoryList == null)
                 throw new ChessException("This is not a Id that belongs to a match");
-            ChessMatchStatusModel chessMatchStatus;
-            if (match.MoveList == null)
+            var moves = match.HistoryList.Select(x => x.Move);
+            ChessGame game;
+            if (moves.Count() != 0)
+                game = new ChessGame(moves, true);
+            else
+                game = new ChessGame();
+            if (match.Winner == 1)
             {
-                Player otherPlayer = match.ChessGame.WhoseTurn == Player.White ? Player.Black : Player.White;
-                bool checkMated = match.ChessGame.IsCheckmated(Player.White) || match.ChessGame.IsCheckmated(Player.Black);
-                bool isOver = checkMated || match.ChessGame.IsStalemated(otherPlayer);
+                Player otherPlayer = game.WhoseTurn == Player.White ? Player.Black : Player.White;
+                bool checkMated = game.IsCheckmated(Player.White) || game.IsCheckmated(Player.Black);
+                bool isOver = checkMated || game.IsStalemated(otherPlayer);
                 var linkFromMatchAsync = await GetImageLinkFromMatchAsync(match, stream);
-                chessMatchStatus = new ChessMatchStatusModel()
+                return new ChessMatchStatusModel()
                 {
                     ImageId = linkFromMatchAsync.ImageId,
                     NextPlayerId = linkFromMatchAsync.NextPlayerId,
                     IsOver = isOver,
-                    IsCheck = match.ChessGame.IsInCheck(otherPlayer),
+                    IsCheck = game.IsInCheck(otherPlayer),
                     IsCheckmated = checkMated
                 };
             }
             else
-                chessMatchStatus = new ChessMatchStatusModel()
+            {
+                return new ChessMatchStatusModel()
                 {
                     ImageId = $"attachment://Chessboards/board{match.Id}-{match.HistoryList.Count}.png",
                     IsOver = true,
                     WinnerId = match.Winner
                 };
-            return chessMatchStatus;
+            }
         }
 
         public async Task<ChessMatchStatusModel> WriteBoard(ulong guildId, ulong channelId, ulong playerId, Stream stream)
@@ -84,9 +89,9 @@ namespace ArcadesBot
             match = _chessHelper.GetMatch(guildId, channelId, playerId);
             if (match == null)
                 throw new ChessException("You are not in a game.");
-            var moves = match.MoveList;
+            var moves = match.HistoryList.Select(x => x.Move);
             ChessGame game;
-            if (moves.Count != 0)
+            if (moves.Count() != 0)
                 game = new ChessGame(moves, true);
             else
                 game = new ChessGame();
@@ -119,9 +124,9 @@ namespace ArcadesBot
                 var blackAvatarData = SixLabors.ImageSharp.Image.Load(await httpClient.GetByteArrayAsync(match.BlackAvatarURL));
                 httpClient.Dispose();
 
-                var moves = match.MoveList;
+                var moves = match.HistoryList.Select(x => x.Move);
                 
-                if (moves.Count != 0)
+                if (moves.Count() != 0)
                     game = new ChessGame(moves, true);
                 else
                     game = new ChessGame();
@@ -310,12 +315,14 @@ namespace ArcadesBot
             return new ChessMatchStatusModel()
             {
                 ImageId = $"attachment://board{match.Id}-{match.HistoryList.Count}.png",
+                
                 NextPlayerId = WhoseTurn(new ChessMatchStatusModel
                 {
                    Match = new ChessMatchModel{
-                        ChallengeeId = match.ChallengeeId,
-                        ChallengerId = match.ChallengerId,
-                        ChessGame = game
+                       HistoryList = match.HistoryList,
+                       ChallengeeId = match.ChallengeeId,
+                       ChallengerId = match.ChallengerId,
+                        //ChessGame = game
                    }
                 })
             };
@@ -377,9 +384,9 @@ namespace ArcadesBot
             if (match == null)
                 throw new ChessException("You are not currently in a game");
 
-            var moves = match.MoveList;
+            var moves = match.HistoryList.Select(x => x.Move);
             ChessGame game;
-            if (moves.Count != 0)
+            if (moves.Count() != 0)
                 game = new ChessGame(moves, true);
             else
                 game = new ChessGame();
@@ -419,7 +426,6 @@ namespace ArcadesBot
                 MoveDate = DateTime.Now
             };
             game.ApplyMove(move, true);
-            match.MoveList.Add(move);
             match.HistoryList.Add(chessMove);
             bool checkMated = game.IsCheckmated(otherPlayer);
             bool isOver = checkMated || game.IsStalemated(otherPlayer);

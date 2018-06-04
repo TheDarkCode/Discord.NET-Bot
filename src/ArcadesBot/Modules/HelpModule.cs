@@ -23,7 +23,7 @@ namespace ArcadesBot.Modules
         [Command]
         public async Task HelpAsync()
         {
-            string prefix = "%" ?? $"@{Context.Client.CurrentUser.Username} ";
+            string prefix = GetPrefix(Context) ?? $"@{Context.Client.CurrentUser.Username} ";
             var modules = _commands.Modules.Where(x => !string.IsNullOrWhiteSpace(x.Summary));
 
             var embed = new EmbedBuilder()
@@ -56,7 +56,7 @@ namespace ArcadesBot.Modules
         [Command]
         public async Task HelpAsync(string moduleName)
         {
-            string prefix = "%" ?? $"@{Context.Client.CurrentUser.Username} ";
+            string prefix = GetPrefix(Context) ?? $"@{Context.Client.CurrentUser.Username} ";
             var module = _commands.Modules.FirstOrDefault(x => x.Name.ToLower() == moduleName.ToLower());
 
             if (moduleName[0].ToString() == prefix)
@@ -102,7 +102,7 @@ namespace ArcadesBot.Modules
         private async Task HelpAsync(string moduleName, string commandName)
         {
             string alias = $"{commandName}".ToLower();
-            string prefix = "%" ?? $"@{Context.Client.CurrentUser.Username} ";
+            string prefix = GetPrefix(Context) ?? $"@{Context.Client.CurrentUser.Username} ";
             var module = _commands.Modules.FirstOrDefault(x => x.Name.ToLower() == moduleName.ToLower());
 
             if (module == null)
@@ -130,23 +130,25 @@ namespace ArcadesBot.Modules
                 {
                     var sbuilder = new StringBuilder()
                         .Append(prefix + overload.Aliases.First());
-
+                    List<EmbedFieldBuilder> fields = new List<EmbedFieldBuilder>();
                     foreach (var parameter in overload.Parameters)
                     {
                         string p = parameter.Name;
                         p = StringHelper.FirstCharToUpper(p);
-
+                        if (parameter.Summary != null)
+                            fields.Add(new EmbedFieldBuilder().WithName(p).WithValue(parameter.Summary));
                         if (parameter.IsRemainder)
                             p += "...";
                         if (parameter.IsOptional)
                             p = $"[{p}]";
                         else
                             p = $"<{p}>";
-
                         sbuilder.Append(" " + p);
                     }
 
                     embed.AddField(sbuilder.ToString(), overload.Remarks ?? overload.Summary);
+                    for (int i = 0; i < fields.Count; i++)
+                        embed.AddField(fields[i]);
                 }
                 aliases.AddRange(overload.Aliases);
             }
@@ -157,5 +159,7 @@ namespace ArcadesBot.Modules
 
             await ReplyAsync("", embed: embed.Build());
         }
+        private string GetPrefix(CustomCommandContext context)
+            => context.Server.Prefix == null ? null : context.Server.Prefix;
     }
 }
