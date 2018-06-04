@@ -18,7 +18,7 @@ namespace ArcadesBot.Modules
         {
             _process = Process.GetCurrentProcess();
         }
-        [Command]
+        [Command, Summary("Get some information about the bot")]
         public async Task InfoAsync()
         {
             var app = await Context.Client.GetApplicationInfoAsync();

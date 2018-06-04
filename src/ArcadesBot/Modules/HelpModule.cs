@@ -59,11 +59,20 @@ namespace ArcadesBot.Modules
             string prefix = GetPrefix(Context) ?? $"@{Context.Client.CurrentUser.Username} ";
             var module = _commands.Modules.FirstOrDefault(x => x.Name.ToLower() == moduleName.ToLower());
 
-            if (moduleName[0].ToString() == prefix)
+            if (module == null)
             {
-                var commandName = moduleName.Substring(1);
-                var command = _commands.Commands.FirstOrDefault(x => x.Aliases.Any(z => z.ToLower() == commandName.ToLower()));
-                await HelpAsync(command.Module.Name, moduleName.Substring(1));
+                try
+                {
+                    if (moduleName.Substring(0, prefix.Length) == prefix)
+                    {
+                        var commandName = moduleName.Substring(prefix.Length);
+                        var command = _commands.Commands.FirstOrDefault(x => x.Aliases.Any(z => z.ToLower() == commandName.ToLower()));
+                        await HelpAsync(command.Module.Name, moduleName.Substring(1));
+                        return;
+                    }
+                }
+                catch(ArgumentOutOfRangeException) {}
+                await ReplyAsync($"The module `{moduleName}` does not exist.");
                 return;
             }
 
