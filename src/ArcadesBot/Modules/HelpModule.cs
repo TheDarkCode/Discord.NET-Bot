@@ -76,12 +76,6 @@ namespace ArcadesBot.Modules
                 return;
             }
 
-            if (module == null)
-            {
-                await ReplyAsync($"The module `{moduleName}` does not exist.");
-                return;
-            }
-
 
             var commands = module.Commands.Where(x => !string.IsNullOrWhiteSpace(x.Summary))
                                  .GroupBy(x => x.Name)
