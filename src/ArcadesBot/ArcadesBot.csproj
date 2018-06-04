@@ -3,6 +3,9 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <ApplicationIcon />
+    <OutputType>Exe</OutputType>
+    <StartupObject />
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,7 +20,7 @@
 
   <ItemGroup>
     <Reference Include="ChessDotNet">
-      <HintPath>..\..\..\Chess.NET\ChessDotNet\bin\Debug\ChessDotNet.dll</HintPath>
+      <HintPath>..\..\ChessDotNet.dll</HintPath>
     </Reference>
   </ItemGroup>
 

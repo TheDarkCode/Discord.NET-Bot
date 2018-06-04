@@ -20,7 +20,7 @@ namespace ArcadesBot.Modules.Eval
         public async Task EvalAsync([Remainder]string code)
         {
             var result = await _roslyn.EvalAsync(Context, code);
-            await ReplyAsync("", embed: result); 
+            await ReplyAsync("", embed: result);
         }
     }
 }

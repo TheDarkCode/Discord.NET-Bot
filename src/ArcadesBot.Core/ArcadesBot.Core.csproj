@@ -5,6 +5,12 @@
     <RootNamespace>ArcadesBot</RootNamespace>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <NoWarn />
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Discord.Net" Version="2.0.0-beta2-00964" />
     <PackageReference Include="RavenDB.Client" Version="4.0.4-patch-40038" />
@@ -15,7 +21,7 @@
 
   <ItemGroup>
     <Reference Include="ChessDotNet">
-      <HintPath>..\..\..\Chess.NET\ChessDotNet\bin\Debug\ChessDotNet.dll</HintPath>
+      <HintPath>..\..\ChessDotNet.dll</HintPath>
     </Reference>
   </ItemGroup>
 
