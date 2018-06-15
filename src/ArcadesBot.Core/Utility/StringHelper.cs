@@ -35,8 +35,8 @@ namespace ArcadesBot
 
         public static string CheckUser(IDiscordClient client, ulong userId)
         {
-            var client = client as DiscordSocketClient;
-            var user = client.GetUser(userId);
+            var clientDiscord = client as DiscordSocketClient;
+            var user = clientDiscord.GetUser(userId);
             return user == null ? "Unknown User." : user.Username;
         }
 

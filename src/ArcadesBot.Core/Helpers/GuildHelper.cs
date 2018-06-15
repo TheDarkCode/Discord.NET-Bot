@@ -107,8 +107,8 @@ namespace ArcadesBot
 
         public bool HierarchyCheck(IGuild guild, IGuildUser user)
         {
-            var guild = guild as SocketGuild;
-            var highestRole = guild.CurrentUser.Roles.OrderByDescending(x => x.Position).FirstOrDefault().Position;
+            var guildSocket = guild as SocketGuild;
+            var highestRole = guildSocket.CurrentUser.Roles.OrderByDescending(x => x.Position).FirstOrDefault().Position;
             return (user as SocketGuildUser).Roles.Any(x => x.Position > highestRole) ? true : false;
         }
     }
