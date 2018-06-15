@@ -13,41 +13,41 @@ namespace ArcadesBot
         {
             get
             {
-                using (var Session = Store.OpenSession())
-                    return Session.Load<ConfigModel>("Config");
+                using (var session = Store.OpenSession())
+                    return session.Load<ConfigModel>("Config");
             }
         }
 
         public ConfigModel ConfigCheck()
         {
-            using (var Session = Store.OpenSession())
+            using (var session = Store.OpenSession())
             {
-                if (Session.Advanced.Exists("Config"))
+                if (session.Advanced.Exists("Config"))
                     return Config;
                 PrettyConsole.Log(LogSeverity.Info, "Arcade's Bot", "Enter Bot's Token:");
-                string Token = Console.ReadLine();
+                var token = Console.ReadLine();
                 PrettyConsole.Log(LogSeverity.Info, "Arcade's Bot", "Enter Bot's Prefix:");
-                string Prefix = Console.ReadLine();
-                Session.Store(new ConfigModel
+                var prefix = Console.ReadLine();
+                session.Store(new ConfigModel
                 {
                     Id = "Config",
-                    Token = Token,
-                    Prefix = Prefix
+                    Token = token,
+                    Prefix = prefix
                 });
-                Session.SaveChanges();
+                session.SaveChanges();
             }
             return Config;
         }
 
-        public void Save(ConfigModel GetConfig = null)
+        public void Save(ConfigModel getConfig = null)
         {
-            GetConfig = GetConfig ?? Config;
-            if (GetConfig == null)
+            getConfig = getConfig ?? Config;
+            if (getConfig == null)
                 return;
-            using (var Session = Store.OpenSession())
+            using (var session = Store.OpenSession())
             {
-                Session.Store(GetConfig, "Config");
-                Session.SaveChanges();
+                session.Store(getConfig, "Config");
+                session.SaveChanges();
             }
         }
     }

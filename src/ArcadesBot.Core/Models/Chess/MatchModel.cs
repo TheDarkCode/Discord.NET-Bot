@@ -13,9 +13,10 @@ namespace ArcadesBot
         public ulong ChallengerId { get; set; }
         public ulong ChallengeeId { get; set; }
         public List<ChessMoveModel> HistoryList { get; set; }
-        public string WhiteAvatarURL { get; set; }
-        public string BlackAvatarURL { get; set; }
+        public string WhiteAvatarUrl { get; set; }
+        public string BlackAvatarUrl { get; set; }
         public ulong Winner { get; set; } = 1;
-        public bool Stalemate { get; set; }
+        public Cause EndBy { get; set; } = Cause.OnGoing;
+        public string IdOfStat { get; set; }
     }
 }

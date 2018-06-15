@@ -20,12 +20,13 @@ namespace ArcadesBot
             var services = new ServiceCollection()
                 .AddSingleton(new DocumentStore
                 {
-                    Certificate = DatabaseHandler.DBConfig.Certificate,
-                    Database = DatabaseHandler.DBConfig.DatabaseName,
-                    Urls = new[] { DatabaseHandler.DBConfig.DatabaseUrl }
+                    Certificate = DatabaseHandler.DbConfig.Certificate,
+                    Database = DatabaseHandler.DbConfig.DatabaseName,
+                    Urls = new[] { DatabaseHandler.DbConfig.DatabaseUrl }
                 }.Initialize())
                 .AddSingleton<ChessHandler>()
                 .AddSingleton<GuildHandler>()
+                .AddSingleton<ChessStatsHandler>()
                 .AddSingleton<ConfigHandler>()
                 .AddSingleton<CommandManager>()
                 .AddSingleton<RoslynManager>()
@@ -86,7 +87,7 @@ namespace ArcadesBot
 
             var youtube = new YouTubeService(new BaseClientService.Initializer()
             {
-                ApiKey = config.Config.APIKeys["Google"],
+                ApiKey = config.Config.ApiKeys["Google"],
                 MaxUrlLength = 256
             });
             services.AddSingleton(youtube);

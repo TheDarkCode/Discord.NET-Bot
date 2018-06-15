@@ -19,47 +19,45 @@ namespace ArcadesBot
                 throw new ArgumentException("ARGH!");
             return input.First().ToString().ToUpper() + input.Substring(1);
         }
-        public static string MultipleOrNot(string input, ulong amount)
-            => amount == 1 ? $"{input}" : $"{input}s";
 
-        public static string ParametersInfo(IReadOnlyCollection<ParameterInfo> Parameters)
-            => Parameters.Any() ?
-            string.Join(" ", Parameters.Select(x => x.IsOptional ? $" `<(Optional){x.Name}>` " : $" `<{x.Name}>` ")) : null;
+        public static string ParametersInfo(IReadOnlyCollection<ParameterInfo> parameters)
+            => parameters.Any() ?
+            string.Join(" ", parameters.Select(x => x.IsOptional ? $" `<(Optional){x.Name}>` " : $" `<{x.Name}>` ")) : null;
 
-        public static async Task<string> DownloadImageAsync(HttpClient HttpClient, string URL)
+        public static async Task<string> DownloadImageAsync(HttpClient httpClient, string url)
         {
-            var Get = await HttpClient.GetByteArrayAsync(URL).ConfigureAwait(false);
-            string FileName = $"Arcade-{Guid.NewGuid().ToString("n").Substring(0, 8)}";
-            using (var UserImage = File.Create($"{FileName}.png"))
-                await UserImage.WriteAsync(Get, 0, Get.Length).ConfigureAwait(false);
-            return $"{FileName}.png";
+            var get = await httpClient.GetByteArrayAsync(url).ConfigureAwait(false);
+            var fileName = $"Arcade-{Guid.NewGuid().ToString("n").Substring(0, 8)}";
+            using (var userImage = File.Create($"{fileName}.png"))
+                await userImage.WriteAsync(get, 0, get.Length).ConfigureAwait(false);
+            return $"{fileName}.png";
         }
 
-        public static string CheckUser(IDiscordClient client, ulong UserId)
+        public static string CheckUser(IDiscordClient client, ulong userId)
         {
-            var Client = client as DiscordSocketClient;
-            var User = Client.GetUser(UserId);
-            return User == null ? "Unknown User." : User.Username;
+            var client = client as DiscordSocketClient;
+            var user = client.GetUser(userId);
+            return user == null ? "Unknown User." : user.Username;
         }
 
-        public static string CheckRole(SocketGuild Guild, ulong Id)
+        public static string CheckRole(SocketGuild guild, ulong id)
         {
-            var Role = Guild.GetRole(Id);
-            return Role == null ? "Unknown Role." : Role.Name;
+            var role = guild.GetRole(id);
+            return role == null ? "Unknown Role." : role.Name;
         }
 
-        public static string CheckChannel(SocketGuild Guild, ulong Id)
+        public static string CheckChannel(SocketGuild guild, ulong id)
         {
-            var Channel = Guild.GetTextChannel(Id);
-            return Channel == null ? "Unknown Channel." : Channel.Name;
+            var channel = guild.GetTextChannel(id);
+            return channel == null ? "Unknown Channel." : channel.Name;
         }
 
-        public static string Replace(string Message, string Guild = null, string User = null)
+        public static string Replace(string message, string guild = null, string user = null)
         {
-            StringBuilder Builder = new StringBuilder(Message);
-            Builder.Replace("{guild}", Guild);
-            Builder.Replace("{user}", User);
-            return Builder.ToString();
+            var builder = new StringBuilder(message);
+            builder.Replace("{guild}", guild);
+            builder.Replace("{user}", user);
+            return builder.ToString();
         }
     }
 }

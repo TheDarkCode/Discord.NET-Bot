@@ -81,21 +81,22 @@ namespace ArcadesBot
 
             await context.Channel.SendMessageAsync(result.ErrorReason);
         }
-        internal async Task CommandHandlerAsync(SocketMessage Message)
+        internal async Task CommandHandlerAsync(SocketMessage message)
         {
-            if (!(Message is SocketUserMessage Msg))
+            if (!(message is SocketUserMessage msg))
                 return;
-            int argPos = 0;
+            var argPos = 0;
             
-            var Context = new CustomCommandContext(_discord, Msg, _provider);
-            if (Context.Config.Blacklist.Contains(Msg.Author.Id) || _guildhelper.GetProfile(Context.Guild.Id, Context.User.Id).IsBlacklisted
-                || Msg.Author.IsBot || Context.Server.BlackListedChannels.Contains(Context.Channel.Id))
+            var context = new CustomCommandContext(_discord, msg, _provider);
+            if (context.Config.Blacklist.Contains(msg.Author.Id) || _guildhelper.GetProfile(context.Guild.Id, context.User.Id).IsBlacklisted
+                || msg.Author.IsBot || context.Server.BlackListedChannels.Contains(context.Channel.Id))
                 return;
-            if (!(Msg.HasStringPrefix(Context.Config.Prefix, ref argPos) || Msg.HasStringPrefix(Context.Server.Prefix, ref argPos) ||
-                Msg.HasMentionPrefix(Context.Client.CurrentUser, ref argPos)) || Msg.Source != MessageSource.User)
+
+            if (!(msg.HasStringPrefix(context.Config.Prefix, ref argPos) || msg.HasStringPrefix(context.Server.Prefix, ref argPos) ||
+                msg.HasMentionPrefix(context.Client.CurrentUser, ref argPos)) || msg.Source != MessageSource.User)
                 return;
-            var result = await _commands.ExecuteAsync(Context, argPos, _provider, MultiMatchHandling.Best);
-            var search = _commands.Search(Context, argPos);
+            var result = await _commands.ExecuteAsync(context, argPos, _provider, MultiMatchHandling.Best);
+            var search = _commands.Search(context, argPos);
             var command = search.IsSuccess ? search.Commands.FirstOrDefault().Command : null;
             switch (result.Error)
             {
@@ -104,34 +105,34 @@ namespace ArcadesBot
                     break;
                 case CommandError.UnmetPrecondition:
                     if (!result.ErrorReason.Contains("SendMessages"))
-                        await Context.Channel.SendMessageAsync(result?.ErrorReason);
+                        await context.Channel.SendMessageAsync(result?.ErrorReason);
                     break;
                 case CommandError.BadArgCount:
-                    string Name = command.Module != null && command.Name.Contains("Async")
+                    var name = command.Module != null && command.Name.Contains("Async")
                         ? command.Module.Group : $"{command.Module.Group ?? null} {command.Name}";
-                    await Context.Channel.SendMessageAsync($"**Usage:** {Context.Config.Prefix}{Name} {StringHelper.ParametersInfo(command.Parameters)}");
+                    await context.Channel.SendMessageAsync($"**Usage:** {context.Config.Prefix}{name} {StringHelper.ParametersInfo(command.Parameters)}");
                     break;
             }
-            _ = Task.Run(() => RecordCommand(command, Context));
+            _ = Task.Run(() => RecordCommand(command, context));
         }
-        internal void RecordCommand(CommandInfo Command, CustomCommandContext Context)
+        internal void RecordCommand(CommandInfo command, CustomCommandContext context)
         {
-            if (Command == null)
+            if (command == null)
                 return;
-            var Profile = _guildhelper.GetProfile(Context.Guild.Id, Context.User.Id);
-            if (!Profile.Commands.ContainsKey(Command.Name))
-                Profile.Commands.Add(Command.Name, 0);
-            Profile.Commands[Command.Name]++;
-            _guildhelper.SaveProfile(Context.Guild.Id, Context.User.Id, Profile);
+            var profile = _guildhelper.GetProfile(context.Guild.Id, context.User.Id);
+            if (!profile.Commands.ContainsKey(command.Name))
+                profile.Commands.Add(command.Name, 0);
+            profile.Commands[command.Name]++;
+            _guildhelper.SaveProfile(context.Guild.Id, context.User.Id, profile);
         }
-        internal Task LeftGuild(SocketGuild Guild) 
+        internal Task LeftGuild(SocketGuild guild) 
             => Task.Run(() 
-                => _guildhandler.RemoveGuild(Guild.Id, Guild.Name));
+                => _guildhandler.RemoveGuild(guild.Id, guild.Name));
 
-        internal Task GuildAvailable(SocketGuild Guild) 
+        internal Task GuildAvailable(SocketGuild guild) 
             => Task.Run(() 
-                => _guildhandler.AddGuild(Guild.Id, Guild.Name));
-        internal Task Disconnected(Exception Error)
+                => _guildhandler.AddGuild(guild.Id, guild.Name));
+        internal Task Disconnected(Exception error)
         {
             _ = Task.Delay(TimeSpan.FromSeconds(5), _cancellationToken.Token).ContinueWith(async _ =>
             {
@@ -145,13 +146,13 @@ namespace ArcadesBot
             if (_discord.ConnectionState == ConnectionState.Connected)
                 return;
 
-            var Timeout = Task.Delay(TimeSpan.FromSeconds(30));
-            var Connect = _discord.StartAsync();
-            var LocalTask = await Task.WhenAny(Timeout, Connect);
+            var timeout = Task.Delay(TimeSpan.FromSeconds(30));
+            var connect = _discord.StartAsync();
+            var localTask = await Task.WhenAny(timeout, connect);
 
-            if (LocalTask == Timeout || Connect.IsFaulted)
+            if (localTask == timeout || connect.IsFaulted)
                 Environment.Exit(1);
-            else if (Connect.IsCompletedSuccessfully)
+            else if (connect.IsCompletedSuccessfully)
             {
                 PrettyConsole.Log(LogSeverity.Info, "Connection Manager", "Client Reset Completed.");
                 return;
@@ -166,52 +167,52 @@ namespace ArcadesBot
             PrettyConsole.Log(LogSeverity.Info, "Connected", "Connected to Discord.");
             return Task.CompletedTask;
         }
-        internal async Task MessageDeletedAsync(Cacheable<IMessage, ulong> Cache, ISocketMessageChannel Channel)
+        internal async Task MessageDeletedAsync(Cacheable<IMessage, ulong> cache, ISocketMessageChannel channel)
         {
-            var Config = _guildhandler.GetGuild((Channel as SocketGuildChannel).Guild.Id);
-            var Message = await Cache.GetOrDownloadAsync();
-            if (Message == null || Config == null || !Config.Mod.LogDeletedMessages || Message.Author.IsBot) return;
-            Config.DeletedMessages.Add(new MessageWrapper
+            var config = _guildhandler.GetGuild((channel as SocketGuildChannel).Guild.Id);
+            var message = await cache.GetOrDownloadAsync();
+            if (message == null || config == null || !config.Mod.LogDeletedMessages || message.Author.IsBot) return;
+            config.DeletedMessages.Add(new MessageWrapper
             {
-                ChannelId = Channel.Id,
-                MessageId = Message.Id,
-                AuthorId = Message.Author.Id,
-                DateTime = Message.Timestamp.DateTime,
-                Content = Message.Content ?? Message.Attachments.FirstOrDefault()?.Url
+                ChannelId = channel.Id,
+                MessageId = message.Id,
+                AuthorId = message.Author.Id,
+                DateTime = message.Timestamp.DateTime,
+                Content = message.Content ?? message.Attachments.FirstOrDefault()?.Url
             });
-            _guildhandler.Update(Config);
+            _guildhandler.Update(config);
         }
-        internal async Task JoinedGuildAsync(SocketGuild Guild)
+        internal async Task JoinedGuildAsync(SocketGuild guild)
         {
-            _guildhandler.AddGuild(Guild.Id, Guild.Name);
-            await Guild.DefaultChannel.SendMessageAsync(_confighandler.Config.JoinMessage ?? "Thank you for inviting me to your server!");
+            _guildhandler.AddGuild(guild.Id, guild.Name);
+            await guild.DefaultChannel.SendMessageAsync(_confighandler.Config.JoinMessage ?? "Thank you for inviting me to your server!");
         }
 
-        internal async Task UserLeftAsync(SocketGuildUser User)
+        internal async Task UserLeftAsync(SocketGuildUser user)
         {
-            var Config = _guildhandler.GetGuild(User.Guild.Id);
+            var config = _guildhandler.GetGuild(user.Guild.Id);
             await _webhookservice.SendMessageAsync(new WebhookOptions
             {
                 Name = _discord.CurrentUser.Username,
-                Webhook = Config.LeaveWebhook,
-                Message = !Config.LeaveMessages.Any() ? $"**{User.Username}** abandoned us!"
-                : StringHelper.Replace(Config.LeaveMessages[_random.Next(0, Config.LeaveMessages.Count)], User.Guild.Name, User.Username)
+                Webhook = config.LeaveWebhook,
+                Message = !config.LeaveMessages.Any() ? $"**{user.Username}** abandoned us!"
+                : StringHelper.Replace(config.LeaveMessages[_random.Next(0, config.LeaveMessages.Count)], user.Guild.Name, user.Username)
             });
         }
 
-        internal async Task UserJoinedAsync(SocketGuildUser User)
+        internal async Task UserJoinedAsync(SocketGuildUser user)
         {
-            var Config = _guildhandler.GetGuild(User.Guild.Id);
+            var config = _guildhandler.GetGuild(user.Guild.Id);
             await _webhookservice.SendMessageAsync(new WebhookOptions
             {
                 Name = _discord.CurrentUser.Username,
-                Webhook = Config.JoinWebhook,
-                Message = !Config.JoinMessages.Any() ? $"**{User.Username}** is here to rock our world! Yeah, baby!"
-                : StringHelper.Replace(Config.JoinMessages[_random.Next(0, Config.JoinMessages.Count)], User.Guild.Name, User.Mention)
+                Webhook = config.JoinWebhook,
+                Message = !config.JoinMessages.Any() ? $"**{user.Username}** is here to rock our world! Yeah, baby!"
+                : StringHelper.Replace(config.JoinMessages[_random.Next(0, config.JoinMessages.Count)], user.Guild.Name, user.Mention)
             });
-            var Role = User.Guild.GetRole(Config.Mod.JoinRole);
-            if (Role != null)
-                await User.AddRoleAsync(Role).ConfigureAwait(false);
+            var role = user.Guild.GetRole(config.Mod.JoinRole);
+            if (role != null)
+                await user.AddRoleAsync(role).ConfigureAwait(false);
         }
     }
 }

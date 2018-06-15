@@ -14,10 +14,9 @@ namespace ArcadesBot.Modules
     {
         private readonly Process _process;
 
-        public InfoModule()
-        {
-            _process = Process.GetCurrentProcess();
-        }
+        public InfoModule() 
+            => _process = Process.GetCurrentProcess();
+
         [Command, Summary("Get some information about the bot")]
         public async Task InfoAsync()
         {

@@ -4,6 +4,12 @@ using System.Collections.Generic;
 
 namespace ArcadesBot
 {
+    public enum Scope
+    {
+        User,
+        Guild,
+        Global
+    }
     public class MessageWrapper
     {
         public string Content { get; set; }

@@ -12,88 +12,88 @@ namespace ArcadesBot
 {
     public class WebhookService
     {
-        HttpClient _httpclient { get; }
-        GuildHandler _guildhandler { get; }
-        DiscordSocketClient _client { get; }
+        HttpClient Httpclient { get; }
+        GuildHandler Guildhandler { get; }
+        DiscordSocketClient Client { get; }
         private FileStream AvatarStream()
         {
             if (File.Exists("Avatar.jpg"))
                 return new FileStream("Avatar.jpg", FileMode.Open, FileAccess.Read);
             else
                 return new FileStream(
-                    StringHelper.DownloadImageAsync(_httpclient, _client.CurrentUser.GetAvatarUrl()).GetAwaiter().GetResult(),
+                    StringHelper.DownloadImageAsync(Httpclient, Client.CurrentUser.GetAvatarUrl()).GetAwaiter().GetResult(),
                     FileMode.Open, FileAccess.Read);
         }
 
         public WebhookService(HttpClient httpClient, GuildHandler guild, DiscordSocketClient client)
         {
-            _guildhandler = guild;
-            _client = client;
-            _httpclient = httpClient;
+            Guildhandler = guild;
+            Client = client;
+            Httpclient = httpClient;
         }
 
-        public DiscordWebhookClient WebhookClient(ulong Id, string Token)
+        public DiscordWebhookClient WebhookClient(ulong id, string token)
         {
             try
             {
-                return new DiscordWebhookClient(Id, Token);
+                return new DiscordWebhookClient(id, token);
             }
             catch
             {
-                PrettyConsole.Log(LogSeverity.Error, "Webhook", $"Webhook {Id} Failed.");
+                PrettyConsole.Log(LogSeverity.Error, "Webhook", $"Webhook {id} Failed.");
                 return null;
             }
         }
 
-        public async Task SendMessageAsync(WebhookOptions Options)
+        public async Task SendMessageAsync(WebhookOptions options)
         {
-            if (!(_client.GetChannel(Options.Webhook.TextChannel) is SocketTextChannel Channel)) return;
-            var Client = WebhookClient(Options.Webhook.WebhookId, Options.Webhook.WebhookToken);
-            await WebhookFallbackAsync(Client, Channel, Options);
+            if (!(this.Client.GetChannel(options.Webhook.TextChannel) is SocketTextChannel channel)) return;
+            var client = WebhookClient(options.Webhook.WebhookId, options.Webhook.WebhookToken);
+            await WebhookFallbackAsync(client, channel, options);
         }
 
-        public async Task<WebhookWrapper> CreateWebhookAsync(SocketTextChannel Channel, string Name)
+        public async Task<WebhookWrapper> CreateWebhookAsync(SocketTextChannel channel, string name)
         {
-            var Get = await GetWebhookAsync(Channel, new WebhookOptions
+            var get = await GetWebhookAsync(channel, new WebhookOptions
             {
-                Name = Name
+                Name = name
             });
-            var Webhook = Get ?? await Channel.CreateWebhookAsync(Name, AvatarStream());
+            var webhook = get ?? await channel.CreateWebhookAsync(name, AvatarStream());
             return new WebhookWrapper
             {
-                TextChannel = Channel.Id,
-                WebhookId = Webhook.Id,
-                WebhookToken = Webhook.Token
+                TextChannel = channel.Id,
+                WebhookId = webhook.Id,
+                WebhookToken = webhook.Token
             };
         }
 
-        public async Task<RestWebhook> GetWebhookAsync(SocketGuild Guild, WebhookOptions Options)
-            => (await Guild?.GetWebhooksAsync())?.FirstOrDefault(x => x?.Name == Options.Name || x?.Id == Options.Webhook.WebhookId);
+        public async Task<RestWebhook> GetWebhookAsync(SocketGuild guild, WebhookOptions options)
+            => (await guild?.GetWebhooksAsync())?.FirstOrDefault(x => x?.Name == options.Name || x?.Id == options.Webhook.WebhookId);
 
-        public async Task<RestWebhook> GetWebhookAsync(SocketTextChannel Channel, WebhookOptions Options)
-            => (await Channel?.GetWebhooksAsync())?.FirstOrDefault(x => x?.Name == Options.Name || x?.Id == Options.Webhook.WebhookId);
+        public async Task<RestWebhook> GetWebhookAsync(SocketTextChannel channel, WebhookOptions options)
+            => (await channel?.GetWebhooksAsync())?.FirstOrDefault(x => x?.Name == options.Name || x?.Id == options.Webhook.WebhookId);
 
-        public Task WebhookFallbackAsync(DiscordWebhookClient Client, ITextChannel Channel, WebhookOptions Options)
+        public Task WebhookFallbackAsync(DiscordWebhookClient client, ITextChannel channel, WebhookOptions options)
         {
-            if (Client == null && Channel != null)
+            if (client == null && channel != null)
             {
-                PrettyConsole.Log(LogSeverity.Error, "WebhookFallback", $"Falling back to Channel: {Channel.Name}");
-                return Channel.SendMessageAsync(Options.Message, embed: Options.Embed);
+                PrettyConsole.Log(LogSeverity.Error, "WebhookFallback", $"Falling back to Channel: {channel.Name}");
+                return channel.SendMessageAsync(options.Message, embed: options.Embed);
             }
-            return Client.SendMessageAsync(Options.Message, embeds: Options.Embed == null ? null : new List<Embed>() { Options.Embed });
+            return client.SendMessageAsync(options.Message, embeds: options.Embed == null ? null : new List<Embed>() { options.Embed });
         }
 
-        public async Task<WebhookWrapper> UpdateWebhookAsync(SocketTextChannel Channel, WebhookWrapper Old, WebhookOptions Options)
+        public async Task<WebhookWrapper> UpdateWebhookAsync(SocketTextChannel channel, WebhookWrapper old, WebhookOptions options)
         {
-            var Hook = !(_client.GetChannel(Old.TextChannel) is SocketTextChannel GetChannel) ?
-                await GetWebhookAsync(Channel.Guild, new WebhookOptions { Webhook = Old }) :
-                await GetWebhookAsync(GetChannel, new WebhookOptions { Webhook = Old });
-            if (Channel.Id == Old.TextChannel && Hook != null) return Old;
-            else if (Hook != null) await Hook.DeleteAsync();
-            var New = await Channel.CreateWebhookAsync(Options.Name, AvatarStream());
+            var hook = !(Client.GetChannel(old.TextChannel) is SocketTextChannel getChannel) ?
+                await GetWebhookAsync(channel.Guild, new WebhookOptions { Webhook = old }) :
+                await GetWebhookAsync(getChannel, new WebhookOptions { Webhook = old });
+            if (channel.Id == old.TextChannel && hook != null) return old;
+            else if (hook != null) await hook.DeleteAsync();
+            var New = await channel.CreateWebhookAsync(options.Name, AvatarStream());
             return new WebhookWrapper
             {
-                TextChannel = Channel.Id,
+                TextChannel = channel.Id,
                 WebhookId = New.Id,
                 WebhookToken = New.Token
             };

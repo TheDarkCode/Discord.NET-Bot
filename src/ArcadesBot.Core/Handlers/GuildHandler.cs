@@ -10,42 +10,42 @@ namespace ArcadesBot
         public GuildHandler(IDocumentStore store) 
             => Store = store;
 
-        public GuildModel GetGuild(ulong Id)
+        public GuildModel GetGuild(ulong id)
         {
-            using (var Session = Store.OpenSession())
-                return Session.Load<GuildModel>($"{Id}");
+            using (var session = Store.OpenSession())
+                return session.Load<GuildModel>($"{id}");
         }
 
-        public void RemoveGuild(ulong Id, string Name = null)
+        public void RemoveGuild(ulong id, string name = null)
         {
-            using (var Session = Store.OpenSession())
-                Session.Delete($"{Id}");
-            PrettyConsole.Log(LogSeverity.Info, "RemoveGuild", string.IsNullOrWhiteSpace(Name) ? $"Removed Server With Id: {Id}" : $"Removed Config For {Name}");
+            using (var session = Store.OpenSession())
+                session.Delete($"{id}");
+            PrettyConsole.Log(LogSeverity.Info, "RemoveGuild", string.IsNullOrWhiteSpace(name) ? $"Removed Server With Id: {id}" : $"Removed Config For {name}");
         }
 
-        public void AddGuild(ulong Id, string Name = null)
+        public void AddGuild(ulong id, string name = null)
         {
-            using (var Session = Store.OpenSession())
+            using (var session = Store.OpenSession())
             {
-                if (Session.Advanced.Exists($"{Id}")) return;
-                Session.Store(new GuildModel
+                if (session.Advanced.Exists($"{id}")) return;
+                session.Store(new GuildModel
                 {
-                    Id = $"{Id}",
+                    Id = $"{id}",
                     Prefix = "%"
                 });
-                Session.SaveChanges();
+                session.SaveChanges();
             }
-            PrettyConsole.Log(LogSeverity.Info, "AddGuild", string.IsNullOrWhiteSpace(Name) ? $"Added Server With Id: {Id}" : $"Created Config For {Name}");
+            PrettyConsole.Log(LogSeverity.Info, "AddGuild", string.IsNullOrWhiteSpace(name) ? $"Added Server With Id: {id}" : $"Created Config For {name}");
         }
 
-        public void Update(GuildModel Server)
+        public void Update(GuildModel server)
         {
-            if (Server == null)
+            if (server == null)
                 return;
-            using (var Session = Store.OpenSession())
+            using (var session = Store.OpenSession())
             {
-                Session.Store(Server, Server.Id);
-                Session.SaveChanges();
+                session.Store(server, server.Id);
+                session.SaveChanges();
             }
         }
     }

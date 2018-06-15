@@ -15,11 +15,9 @@ namespace ArcadesBot
     {
         private readonly IServiceProvider _provider;
 
-        public RoslynManager(IServiceProvider provider)
-        {
-            _provider = provider;
-        }
-        
+        public RoslynManager(IServiceProvider provider) 
+            => _provider = provider;
+
         public ScriptOptions GetOptions()
         {
             var options = ScriptOptions.Default
@@ -49,8 +47,8 @@ namespace ArcadesBot
 
         public async Task<Embed> EvalAsync(CustomCommandContext context, string content)
         {
-            var _timer = new Stopwatch();
-            _timer.Start();
+            var timer = new Stopwatch();
+            timer.Start();
 
             var cleancode = GetFormattedCode("cs", content);
             var options = GetOptions();
@@ -64,14 +62,14 @@ namespace ArcadesBot
             {
                 result = ex;
             }
-            _timer.Stop();
+            timer.Stop();
 
-            return GetEmbed(cleancode, result, _timer.ElapsedMilliseconds);
+            return GetEmbed(cleancode, result, timer.ElapsedMilliseconds);
         }
         
         public string GetFormattedCode(string language, string rawmsg)
         {
-            string code = rawmsg;
+            var code = rawmsg;
 
             if (code.StartsWith("```"))
                 code = code.Substring(3, code.Length - 6);
@@ -88,8 +86,10 @@ namespace ArcadesBot
         
         public Embed GetEmbed(string code, object result, long executeTime)
         {
-            var builder = new EmbedBuilder();
-            builder.Color = new Color(25, 128, 0);
+            var builder = new EmbedBuilder
+            {
+                Color = new Color(25, 128, 0)
+            };
             builder.AddField(x =>
             {
                 x.Name = "Code";
@@ -117,9 +117,7 @@ namespace ArcadesBot
     {
         public readonly CustomCommandContext Context;
 
-        public RoslynGlobals(IServiceProvider provider, CustomCommandContext context)
-        {
-            Context = context;
-        }
+        public RoslynGlobals(IServiceProvider provider, CustomCommandContext context) 
+            => Context = context;
     }
 }

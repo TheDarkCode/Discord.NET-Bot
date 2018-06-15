@@ -17,13 +17,13 @@ namespace ArcadesBot
             AccessLevel = accessLevel;
         }
 
-        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo Command, IServiceProvider Provider)
+        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider provider)
         {
-            var Context = context as CustomCommandContext;
-            var GuildUser = Context.User as SocketGuildUser;
-            var Owner = Context.Client.GetApplicationInfoAsync().GetAwaiter().GetResult();
-            var AdminPerms = Context.Guild.OwnerId == Context.User.Id || GuildUser.GuildPermissions.Administrator || GuildUser.GuildPermissions.ManageGuild || GuildUser.Id == Owner.Owner.Id;
-            var ModPerms = new[] 
+            var context = context as CustomCommandContext;
+            var guildUser = context.User as SocketGuildUser;
+            var owner = context.Client.GetApplicationInfoAsync().GetAwaiter().GetResult();
+            var adminPerms = context.Guild.OwnerId == context.User.Id || guildUser.GuildPermissions.Administrator || guildUser.GuildPermissions.ManageGuild || guildUser.Id == owner.Owner.Id;
+            var modPerms = new[] 
             {
                 GuildPermission.KickMembers,
                 GuildPermission.BanMembers,
@@ -31,12 +31,12 @@ namespace ArcadesBot
                 GuildPermission.ManageMessages,
                 GuildPermission.ManageRoles
             };
-            if (AccessLevel >= AccessLevel.Administrator && AdminPerms)
+            if (AccessLevel >= AccessLevel.Administrator && adminPerms)
                 return Task.FromResult(PreconditionResult.FromSuccess());
-            else if (AccessLevel >= AccessLevel.Moderator && ModPerms.Any(x => GuildUser.GuildPermissions.Has(x)))
+            else if (AccessLevel >= AccessLevel.Moderator && modPerms.Any(x => guildUser.GuildPermissions.Has(x)))
                 return Task.FromResult(PreconditionResult.FromSuccess());
             else
-                return Task.FromResult(PreconditionResult.FromError($"{Command.Name} requires **{AccessLevel}** AccessLevel. To learn more on AccessLevel, use `{Context.Config.Prefix}Info` command."));
+                return Task.FromResult(PreconditionResult.FromError($"{command.Name} requires **{AccessLevel}** AccessLevel. To learn more on AccessLevel, use `{context.Config.Prefix}Info` command."));
         }
     }
 

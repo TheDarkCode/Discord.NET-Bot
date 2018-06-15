@@ -1,56 +1,72 @@
-﻿using System.Drawing;
+﻿using Discord;
 using Raven.Client.Documents;
-using Discord;
 using System;
-using System.Threading.Tasks;
-using System.Linq;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ArcadesBot
 {
     public class ChessHandler
     {
         private IDocumentStore Store { get; }
-        public ChessHandler(IDocumentStore store)
-            => Store = store;
+        public ChessStatsHandler Stats { get; set; }
+
+        public ChessHandler(IDocumentStore store, ChessStatsHandler stats)
+        {
+            Store = store;
+            Stats = stats;
+        }
 
         public List<ChessMatchModel> GetMatches()
         {
-            using (var Session = Store.OpenSession())
-                return Session.Query<ChessMatchModel>().ToList();
+            using (var session = Store.OpenSession())
+                return session.Query<ChessMatchModel>().ToList();
         }
         public List<ChessChallengeModel> GetChallenges()
         {
-            using (var Session = Store.OpenSession())
-                return Session.Query<ChessChallengeModel>().ToList();
+            using (var session = Store.OpenSession())
+                return session.Query<ChessChallengeModel>().ToList();
         }
-        public void CompleteMatch(ChessMatchModel chessMatch)
+        public List<ChessMatchStatsModel> GetStats(ulong? user = null, ulong? guildId = null)
         {
-            using (var Session = Store.OpenSession())
-                Session.Delete($"{chessMatch.Id}");
-            PrettyConsole.Log(LogSeverity.Info, "Remove ChessMatch",  $"Removed Chess Match With Id: {chessMatch.Id}");
+            using (var session = Store.OpenSession())
+            {
+                if (user != null)
+                    return session.Query<ChessMatchStatsModel>().Where(x => x.Participants.Contains((ulong) user) && x.GuildId == guildId).ToList();
+
+                if (guildId != null)
+                    return session.Query<ChessMatchStatsModel>().Where(x => x.GuildId == guildId).ToList();
+
+                return session.Query<ChessMatchStatsModel>().ToList();
+            }
+                
+        }
+        public void CompleteMatch(ref ChessMatchModel chessMatch)
+        {
+            var statId = Stats.AddStat(chessMatch);
+            chessMatch.IdOfStat = statId;
+            PrettyConsole.Log(LogSeverity.Info, "Complete ChessMatch", $"Completed Chess Match With Id: {chessMatch.Id}");
         }
 
-        public void AddMatch(ulong guildId, ulong channelId, ulong challenger, ulong challengee, string whiteAvatarURL, string blackAvatarURL)
+        public void AddMatch(ulong guildId, ulong channelId, ulong challenger, ulong challengee, string whiteAvatarUrl, string blackAvatarUrl)
         {
             var id = Guid.NewGuid();
-            using (var Session = Store.OpenSession())
+            using (var session = Store.OpenSession())
             {
-                while (Session.Advanced.Exists($"{id}"))
+                while (session.Advanced.Exists($"{id}"))
                     id = Guid.NewGuid();
-                Session.Store(new ChessMatchModel
+                session.Store(new ChessMatchModel
                 {
                     Id = $"{id}",
                     ChallengerId = challenger,
                     ChallengeeId = challengee,
                     ChannelId = channelId,
                     GuildId = guildId,
-                    WhiteAvatarURL = whiteAvatarURL,
-                    BlackAvatarURL = blackAvatarURL,
+                    WhiteAvatarUrl = whiteAvatarUrl,
+                    BlackAvatarUrl = blackAvatarUrl,
                     HistoryList = new List<ChessMoveModel>()
                 });
-                Session.SaveChanges();
+                session.SaveChanges();
             }
             PrettyConsole.Log(LogSeverity.Info, "Add ChessMatch",  $"Added Chess Match With Id: {id}");
         }
@@ -59,21 +75,25 @@ namespace ArcadesBot
         {
             if (chessMatch == null)
                 return;
-            using (var Session = Store.OpenSession())
+            if (chessMatch.Winner != 1)
             {
-                Session.Store(chessMatch, $"{chessMatch.Id}");
-                Session.SaveChanges();
+                CompleteMatch(ref chessMatch);
+            }
+            using (var session = Store.OpenSession())
+            {
+                session.Store(chessMatch, $"{chessMatch.Id}");
+                session.SaveChanges();
             }
         }
 
-        public void AddChallenge(ulong guildId, ulong channelId, ulong challenger, ulong challengee, string whiteAvatarURL, string blackAvatarURL)
+        public void AddChallenge(ulong guildId, ulong channelId, ulong challenger, ulong challengee, string whiteAvatarUrl, string blackAvatarUrl)
         {
             var id = Guid.NewGuid();
-            using (var Session = Store.OpenSession())
+            using (var session = Store.OpenSession())
             {
-                while (Session.Advanced.Exists($"{id}"))
+                while (session.Advanced.Exists($"{id}"))
                     id = Guid.NewGuid();
-                Session.Store(new ChessChallengeModel
+                session.Store(new ChessChallengeModel
                 {
                     Id = $"{id}",
                     ChallengerId = challenger,
@@ -84,7 +104,7 @@ namespace ArcadesBot
                     DateCreated = DateTime.Now,
                     TimeoutDate = DateTime.Now.AddMinutes(1)
                 });
-                Session.SaveChanges();
+                session.SaveChanges();
             }
             PrettyConsole.Log(LogSeverity.Info, "Add ChessChallenge", $"Added Chess Challenge With Id: {id}");
         }
@@ -93,10 +113,10 @@ namespace ArcadesBot
         {
             if (chessChallenge == null)
                 return;
-            using (var Session = Store.OpenSession())
+            using (var session = Store.OpenSession())
             {
-                Session.Store(chessChallenge, $"{chessChallenge.Id}");
-                Session.SaveChanges();
+                session.Store(chessChallenge, $"{chessChallenge.Id}");
+                session.SaveChanges();
             }
         }
     }

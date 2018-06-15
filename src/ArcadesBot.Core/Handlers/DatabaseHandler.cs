@@ -14,24 +14,24 @@ namespace ArcadesBot
 {
     public class DatabaseHandler
     {
-        IDocumentStore _store { get; }
-        ConfigHandler _config { get; }
+        IDocumentStore Store { get; }
+        ConfigHandler Config { get; }
         public DatabaseHandler(IDocumentStore store, ConfigHandler config)
         {
-            _store = store;
-            _config = config;
+            Store = store;
+            Config = config;
         }
 
-        public static DatabaseModel DBConfig
+        public static DatabaseModel DbConfig
         {
             get
             {
-                var DBConfigPath = $"{Directory.GetCurrentDirectory()}/DBConfig.json";
-                if (File.Exists(DBConfigPath))
-                    return JsonConvert.DeserializeObject<DatabaseModel>(File.ReadAllText(DBConfigPath));
+                var dbConfigPath = $"{Directory.GetCurrentDirectory()}/DBConfig.json";
+                if (File.Exists(dbConfigPath))
+                    return JsonConvert.DeserializeObject<DatabaseModel>(File.ReadAllText(dbConfigPath));
 
-                File.WriteAllText(DBConfigPath, JsonConvert.SerializeObject(new DatabaseModel(), Formatting.Indented));
-                return JsonConvert.DeserializeObject<DatabaseModel>(File.ReadAllText(DBConfigPath));
+                File.WriteAllText(dbConfigPath, JsonConvert.SerializeObject(new DatabaseModel(), Formatting.Indented));
+                return JsonConvert.DeserializeObject<DatabaseModel>(File.ReadAllText(dbConfigPath));
             }
         }
 
@@ -45,26 +45,26 @@ namespace ArcadesBot
             }
 
             await DatabaseSetupAsync().ConfigureAwait(false);
-            _config.ConfigCheck();
+            Config.ConfigCheck();
         }
 
         private async Task DatabaseSetupAsync()
         {
-            if (_store.Maintenance.Server.Send(new GetDatabaseNamesOperation(0, 5)).Any(x => x == DBConfig.DatabaseName))
+            if (Store.Maintenance.Server.Send(new GetDatabaseNamesOperation(0, 5)).Any(x => x == DbConfig.DatabaseName))
                 return;
 
-            PrettyConsole.Log(LogSeverity.Warning, "Database", $"Database {DBConfig.DatabaseName} doesn't exist!");
-            _ = await _store.Maintenance.Server.SendAsync(new CreateDatabaseOperation(new DatabaseRecord(DBConfig.DatabaseName)));
-            PrettyConsole.Log(LogSeverity.Info, "Database", $"Created Database{DBConfig.DatabaseName}.");
+            PrettyConsole.Log(LogSeverity.Warning, "Database", $"Database {DbConfig.DatabaseName} doesn't exist!");
+            _ = await Store.Maintenance.Server.SendAsync(new CreateDatabaseOperation(new DatabaseRecord(DbConfig.DatabaseName)));
+            PrettyConsole.Log(LogSeverity.Info, "Database", $"Created Database{DbConfig.DatabaseName}.");
             PrettyConsole.Log(LogSeverity.Info, "Database", "Setting up backup operation...");
 
-            _ = await _store.Maintenance.SendAsync(new UpdatePeriodicBackupOperation(new PeriodicBackupConfiguration
+            _ = await Store.Maintenance.SendAsync(new UpdatePeriodicBackupOperation(new PeriodicBackupConfiguration
             {
                 Name = "Backup",
                 BackupType = BackupType.Backup,
                 FullBackupFrequency = "*/10 * * * *",
                 IncrementalBackupFrequency = "0 2 * * *",
-                LocalSettings = new LocalSettings { FolderPath = DBConfig.BackupLocation }
+                LocalSettings = new LocalSettings { FolderPath = DbConfig.BackupLocation }
             })).ConfigureAwait(false);
 
             PrettyConsole.Log(LogSeverity.Info, "Database", "Finished backup operation!");
