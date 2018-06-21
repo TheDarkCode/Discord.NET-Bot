@@ -14,11 +14,10 @@ namespace ArcadesBot.Modules
     {
         private readonly Process _process;
 
-        public InfoModule(IAssetService assetService)
-        {
-            _process = Process.GetCurrentProcess();
-        }
-        [Command]
+        public InfoModule() 
+            => _process = Process.GetCurrentProcess();
+
+        [Command, Summary("Get some information about the bot")]
         public async Task InfoAsync()
         {
             var app = await Context.Client.GetApplicationInfoAsync();

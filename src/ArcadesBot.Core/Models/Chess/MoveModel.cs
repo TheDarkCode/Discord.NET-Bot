@@ -3,7 +3,7 @@ using System;
 
 namespace ArcadesBot
 {
-    public class ChessMove
+    public class ChessMoveModel
     {
         public Move Move { get; set; }
         public DateTime MoveDate { get; set; }

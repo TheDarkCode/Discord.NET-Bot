@@ -23,7 +23,7 @@ namespace ArcadesBot.Modules
         [Command]
         public async Task HelpAsync()
         {
-            string prefix = (await Context.Guild.GetPrefixAsync()) ?? $"@{Context.Client.CurrentUser.Username} ";
+            var prefix = GetPrefix(Context) ?? $"@{Context.Client.CurrentUser.Username} ";
             var modules = _commands.Modules.Where(x => !string.IsNullOrWhiteSpace(x.Summary));
 
             var embed = new EmbedBuilder()
@@ -31,7 +31,7 @@ namespace ArcadesBot.Modules
 
             foreach (var module in modules)
             {
-                bool success = false;
+                var success = false;
                 foreach (var command in module.Commands)
                 {
                     var result = await command.CheckPreconditionsAsync(Context, _provider);
@@ -56,19 +56,22 @@ namespace ArcadesBot.Modules
         [Command]
         public async Task HelpAsync(string moduleName)
         {
-            string prefix = (await Context.Guild.GetPrefixAsync()) ?? $"@{Context.Client.CurrentUser.Username} ";
+            var prefix = GetPrefix(Context) ?? $"@{Context.Client.CurrentUser.Username} ";
             var module = _commands.Modules.FirstOrDefault(x => x.Name.ToLower() == moduleName.ToLower());
-
-            if (moduleName[0].ToString() == prefix)
-            {
-                var commandName = moduleName.Substring(1);
-                var command = _commands.Commands.FirstOrDefault(x => x.Aliases.Any(z => z.ToLower() == commandName.ToLower()));
-                await HelpAsync(command.Module.Name, moduleName.Substring(1));
-                return;
-            }
 
             if (module == null)
             {
+                try
+                {
+                    if (moduleName.Substring(0, prefix.Length) == prefix)
+                    {
+                        var commandName = moduleName.Substring(prefix.Length);
+                        var command = _commands.Commands.FirstOrDefault(x => x.Aliases.Any(z => z.ToLower() == commandName.ToLower()));
+                        await HelpAsync(command.Module.Name, moduleName.Substring(1));
+                        return;
+                    }
+                }
+                catch(ArgumentOutOfRangeException) {}
                 await ReplyAsync($"The module `{moduleName}` does not exist.");
                 return;
             }
@@ -101,8 +104,8 @@ namespace ArcadesBot.Modules
 
         private async Task HelpAsync(string moduleName, string commandName)
         {
-            string alias = $"{commandName}".ToLower();
-            string prefix = (await Context.Guild.GetPrefixAsync()) ?? $"@{Context.Client.CurrentUser.Username} ";
+            var alias = $"{commandName}".ToLower();
+            var prefix = GetPrefix(Context) ?? $"@{Context.Client.CurrentUser.Username} ";
             var module = _commands.Modules.FirstOrDefault(x => x.Name.ToLower() == moduleName.ToLower());
 
             if (module == null)
@@ -130,23 +133,25 @@ namespace ArcadesBot.Modules
                 {
                     var sbuilder = new StringBuilder()
                         .Append(prefix + overload.Aliases.First());
-
+                    var fields = new List<EmbedFieldBuilder>();
                     foreach (var parameter in overload.Parameters)
                     {
-                        string p = parameter.Name;
+                        var p = parameter.Name;
                         p = StringHelper.FirstCharToUpper(p);
-
+                        if (parameter.Summary != null)
+                            fields.Add(new EmbedFieldBuilder().WithName(p).WithValue(parameter.Summary));
                         if (parameter.IsRemainder)
                             p += "...";
                         if (parameter.IsOptional)
                             p = $"[{p}]";
                         else
                             p = $"<{p}>";
-
                         sbuilder.Append(" " + p);
                     }
 
                     embed.AddField(sbuilder.ToString(), overload.Remarks ?? overload.Summary);
+                    for (var i = 0; i < fields.Count; i++)
+                        embed.AddField(fields[i]);
                 }
                 aliases.AddRange(overload.Aliases);
             }
@@ -157,5 +162,7 @@ namespace ArcadesBot.Modules
 
             await ReplyAsync("", embed: embed.Build());
         }
+        private string GetPrefix(CustomCommandContext context)
+            => context.Server.Prefix ?? null;
     }
 }

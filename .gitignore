@@ -1,0 +1,9 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/ArcadesBot
+/src/ArcadesBot/bin/Debug/netcoreapp2.0
+/src/ArcadesBot/obj
+/src/ArcadesBot.Core/bin/Debug/netcoreapp2.0
+/src/ArcadesBot.Core/obj

@@ -4,60 +4,53 @@ using Discord.WebSocket;
 using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
 
 namespace ArcadesBot
 {
     [Name("Chess")]
     [Summary("All the commands related to chess")]
-    public class ChessModule : ModuleBase<CustomCommandContext>
+    public class ChessModule : Base
     {
-        private readonly ChessDatabase _chessDatabase;
-        private readonly IChessService _chessService;
-        private readonly ConfigDatabase _configDatabase;
+        private readonly ChessHelper _chessHelper;
+        private readonly ChessService _chessService;
 
-        public ChessModule(IChessService chessService, ChessDatabase chessDatabase, ConfigDatabase configDatabase)
+        public ChessModule(ChessService chessService, ChessHelper chessHelper)
         {
-            _configDatabase = configDatabase;
-            _chessDatabase = chessDatabase;
+            _chessHelper = chessHelper;
             _chessService = chessService;
         }
 
         [RequireContext(ContextType.Guild)]
         [Command("show")]
         [Summary("Shows the current board")]
-        public async Task ShowAsync(ulong? Id = null)
+        public async Task ShowAsync()
         {
             await Context.Channel.TriggerTypingAsync();
-            using (MemoryStream stream = new MemoryStream())
+            try
             {
-                try
+                var chessMatchStatus = await _chessService.WriteBoard(Context.Guild.Id, Context.Channel.Id, Context.Message.Author.Id);
+                string str;
+                if (chessMatchStatus.Status != Cause.OnGoing)
                 {
-                    ChessMatchStatus chessMatchStatus;
-                    if (!Id.HasValue)
-                        chessMatchStatus = await _chessService.WriteBoard(Context.Guild.Id, Context.Channel.Id, Context.Message.Author.Id, stream);
-                    else
-                        chessMatchStatus = await _chessService.WriteBoard(Id, stream);
-                    string str;
-                    if (chessMatchStatus.IsOver)
+                    str = "This match is over.";
+                    var winnerId = chessMatchStatus.WinnerId;
+                    if (winnerId != null)
                     {
-                        str = "This match is over.";
-                        ulong? winnerId = chessMatchStatus.WinnerId;
-                        if (winnerId != null)
-                        {
-                            SocketGuildUser user = Context.Guild.GetUser((ulong)winnerId);
-                            str += $" {user.Mention} has won the match.";
-                        }
+                        var user = Context.Guild.GetUser((ulong)winnerId);
+                        str += $" {user.Mention} has won the match.";
                     }
-                    else
-                        str = Context.Guild.GetUser(chessMatchStatus.NextPlayerId).Mention + " is up next";
-                    var embedBuilder = new EmbedBuilder().WithImageUrl(chessMatchStatus.ImageId).WithColor(EmbedColors.GetSuccessColor()).WithDescription(str);
-                    await ReplyAsync("", false, embedBuilder.Build());
                 }
-                catch (ChessException ex)
-                {
-                    var embedBuilder = new EmbedBuilder().WithDescription(ex.Message).WithColor(EmbedColors.GetErrorColor());
-                    await ReplyAsync("", false, embedBuilder.Build());
-                }
+                else
+                    str = Context.Guild.GetUser(chessMatchStatus.NextPlayerId).Mention + " is up next";
+                var embedBuilder = new EmbedBuilder().WithImageUrl(chessMatchStatus.ImageLink).WithColor(EmbedColors.GetSuccessColor()).WithDescription(str);
+                await Context.Channel.SendFileAsync($"Chessboards/board{chessMatchStatus.Match.Id}-{chessMatchStatus.Match.HistoryList.Count}.png", embed: embedBuilder.Build());
+            }
+            catch (ChessException ex)
+            {
+                var embedBuilder = new EmbedBuilder().WithDescription(ex.Message).WithColor(EmbedColors.GetErrorColor());
+                await ReplyAsync("", false, embedBuilder.Build());
             }
         }
 
@@ -67,20 +60,18 @@ namespace ArcadesBot
         public async Task AcceptAsync()
         {
             await Context.Channel.TriggerTypingAsync();
-            var challengeAsync = await _chessDatabase.GetChallengeAsync(Context.Guild.Id, Context.Channel.Id, Context.Message.Author.Id);
+            var challengeAsync = _chessHelper.GetChallenge(Context.Guild.Id, Context.Channel.Id, Context.Message.Author.Id);
             var embed = new EmbedBuilder();
             try
             {
                 if (challengeAsync != null)
                 {
-                    var chessMatch = await _chessService.AcceptChallenge(Context, Context.Message.Author);
+                    var chessMatch = _chessService.AcceptChallenge(Context, Context.Message.Author);
                     embed = new EmbedBuilder().WithDescription($"Match has started between {Context.Guild.GetUser(chessMatch.ChallengerId).Mention} and {Context.Guild.GetUser(chessMatch.ChallengeeId).Mention}.").WithColor(EmbedColors.GetSuccessColor());
-                    using (MemoryStream stream = new MemoryStream())
-                    {
-                        var chessMatchStatus = await _chessService.WriteBoard(Context.Guild.Id, Context.Channel.Id, Context.Message.Author.Id, stream);
-                        embed.WithImageUrl(chessMatchStatus.ImageId).WithDescription("Your move " + Context.Guild.GetUser(chessMatchStatus.NextPlayerId).Mention);
-                        await ReplyAsync("", false, embed.Build());
-                    }
+
+                    var chessMatchStatus = await _chessService.WriteBoard(Context.Guild.Id, Context.Channel.Id, Context.Message.Author.Id);
+                    embed.WithImageUrl(chessMatchStatus.ImageLink).WithDescription("Your move " + Context.Guild.GetUser(chessMatchStatus.NextPlayerId).Mention);
+                    await Context.Channel.SendFileAsync($"Chessboards/board{chessMatchStatus.Match.Id}-{chessMatchStatus.Match.HistoryList.Count}.png", embed: embed.Build());
                 }
             }
             catch (ChessException ex)
@@ -93,21 +84,21 @@ namespace ArcadesBot
         [RequireContext(ContextType.Guild)]
         [Command("challenge")]
         [Summary("Challenge someone to a chess match")]
-        public async Task ChallengeAsync(IUser challengee)
+        public async Task ChallengeAsync([Summary("The person you want to challenge to a match of chess")]IUser challengee)
         {
             await Context.Channel.TriggerTypingAsync();
-            SocketGuildUser user = challengee as SocketGuildUser;
+            var user = challengee as SocketGuildUser;
             EmbedBuilder embed;
             try
             {
-                ChessChallenge chessChallenge = await _chessService.Challenge(Context.Guild.Id, Context.Channel.Id, Context.Message.Author, user, (async x =>
+                var _ = _chessService.Challenge(Context.Guild.Id, Context.Channel.Id, Context.Message.Author, user, async x =>
                 {
-                    SocketGuildUser Challengee = Context.Guild.GetUser(x.ChallengeeId);
-                    SocketGuildUser Challenger = Context.Guild.GetUser(x.ChallengerId);
+                    var challengeeUser = Context.Guild.GetUser(x.ChallengeeId);
+                    var challengerUser = Context.Guild.GetUser(x.ChallengerId);
 
-                    embed = new EmbedBuilder().WithDescription($"Challenge timed out for {Challenger.Mention} challenging {Challengee.Mention}").WithColor(EmbedColors.GetSuccessColor());
+                    embed = new EmbedBuilder().WithDescription($"Challenge timed out for {challengerUser.Mention} challenging {challengeeUser.Mention}").WithColor(EmbedColors.GetSuccessColor());
                     await ReplyAsync("", false, embed.Build());
-                }));
+                });
                 embed = new EmbedBuilder().WithDescription(Context.Message.Author.Mention + $" is challenging {user.Mention}.").WithColor(EmbedColors.GetSuccessColor());
                 await ReplyAsync("", false, embed.Build());
             }
@@ -126,9 +117,9 @@ namespace ArcadesBot
             await Context.Channel.TriggerTypingAsync();
             try
             {
-                ulong winner = await _chessService.Resign(Context.Guild.Id, Context.Channel.Id, Context.Message.Author);
-                SocketGuildUser user = Context.Guild.GetUser(winner);
-                EmbedBuilder embedBuilder = new EmbedBuilder().WithDescription($"{Context.Message.Author.Mention} has resigned the match. {user.Mention} has won the game.").WithColor(EmbedColors.GetSuccessColor());
+                var winner = _chessService.Resign(Context.Guild.Id, Context.Channel.Id, Context.Message.Author);
+                var user = Context.Guild.GetUser(winner);
+                var embedBuilder = new EmbedBuilder().WithDescription($"{Context.Message.Author.Mention} has resigned the match. {user.Mention} has won the game.").WithColor(EmbedColors.GetSuccessColor());
                 await ReplyAsync("", false, embedBuilder.Build());
             }
             catch (ChessException ex)
@@ -141,59 +132,148 @@ namespace ArcadesBot
         [RequireContext(ContextType.Guild)]
         [Command("stats")]
         [Summary("Currently a filler command")]
-        public async Task StatsAsync()
+        public async Task StatsAsync([Summary("Availible Scopes:\n - User (Default)\n - Guild\n - Global")]Scope scope = Scope.User)
         {
+            IEnumerable<ChessMatchStatsModel> stats;
+            ChessMatchStatsModel lastGame = null;
+            var embed = new EmbedBuilder();
+            switch (scope)
+            {
+                case Scope.User:
+                    embed.WithAuthor(Context.User).WithDescription($"Stats for {Context.User}");
+                    stats =  _chessHelper.GetStatsFromUser(Context.User.Id, Context.Guild.Id);
+                    lastGame = stats.OrderByDescending(x => x.EndDate).FirstOrDefault();
+                    if (lastGame == null)
+                        embed.AddField("No games found on this server", "");
+                    else
+                    {
+                        embed.AddField(
+                            "Games completed",
+                            stats.Count(),
+                            true
+                        ).AddField(
+                            "Amount of games won",
+                            stats.Count(x => x.Winner == Context.User.Id),
+                            true
+                        ).AddField(
+                            "Last game",
+                            lastGame.Winner == Context.User.Id
+                                ? $"Won by {lastGame.EndBy}"
+                                : $"Lost by {lastGame.EndBy}",
+                            true
+                        ).WithUrl($"attachment://board{lastGame.Id}-{lastGame.MoveCount}.png");
+                    }
+
+                    break;
+                case Scope.Guild:
+                    embed.WithAuthor(Context.Guild.IconUrl).WithDescription($"Stats for {Context.Guild}");
+                    stats = _chessHelper.GetStatsByGuild(Context.Guild.Id);
+                    lastGame = stats.OrderByDescending(x => x.EndDate).FirstOrDefault();
+                    if (lastGame == null)
+                        embed.AddField("No games found on this server", "");
+                    else
+                    {
+                        embed.AddField(
+                            "Games completed",
+                            stats.Count(),
+                            true
+                        ).AddField(
+                            "Amount of games won",
+                            stats.Count(x => x.Winner == Context.User.Id),
+                            true
+                        ).AddField(
+                            "Last game",
+                            lastGame.Winner == Context.User.Id
+                                ? $"Won by {lastGame.EndBy}"
+                                : $"Lost by {lastGame.EndBy}",
+                            true
+                        ).WithImageUrl($"attachment://board{lastGame.Id}-{lastGame.MoveCount}.png");
+                    }
+
+                    break;
+                case Scope.Global:
+                    embed.WithAuthor(Context.User).WithDescription($"Stats for {Context.Guild}");
+                    stats = _chessHelper.GetGlobalStats();
+                    lastGame = stats.OrderByDescending(x => x.EndDate).FirstOrDefault();
+                    if (lastGame == null)
+                    {
+                        embed.AddField("No games found globally", "");
+                        break;
+                    }
+                    else
+                    {
+                        double gamesCount = stats.Count();
+                        double challengerWinnerCount = stats.Count(x => x.Winner == x.CreatedBy);
+                        var division = challengerWinnerCount / gamesCount;
+                        embed.AddField(
+                            "Games completed",
+                            stats.Count(),
+                            true
+                        ).AddField(
+                            "Won by challenger",
+                            Math.Round(division * 100, 2) + "%",
+                            true
+                        ).AddField(
+                            "Last game",
+                            lastGame.Winner == Context.User.Id
+                                ? $"Won by {lastGame.EndBy}"
+                                : $"Lost by {lastGame.EndBy}",
+                            true
+                        ).WithImageUrl($"attachment://board{lastGame.Id}-{lastGame.MoveCount}.png");
+                        break;
+                    }
+            }
+
+            if (lastGame != null)
+            {
+                var match = _chessHelper.GetMatchByStatId(lastGame.Id);
+                Stream stream = File.OpenRead($"Chessboards/board{match.Id}-{lastGame.MoveCount}.png");
+                await SendFileAsync(stream, $"board{lastGame.Id}-{lastGame.MoveCount}.png",
+                    embed: embed.Build());
+            }
+            else
+                await ReplyAsync("", embed: embed.Build());
         }
 
-        [IsAdmin]
-        [RequireContext(ContextType.Guild)]
-        [Command("changetimeout")]
-        [Summary("Change the timeout on this guild in seconds")]
-        public async Task ChangeTimoutAsync(ulong seconds = 30)
-        {
-            await _configDatabase.ChangeTimeout(seconds, Context.Guild.Id);
-            var embedBuilder = new EmbedBuilder().WithDescription($"The timeout of this guild has been changed to `{seconds}` seconds").WithColor(EmbedColors.GetSuccessColor());
-            await ReplyAsync("", false, embedBuilder.Build());
-        }
 
         [RequireContext(ContextType.Guild)]
         [Command("move")]
-        [Summary("Moves a piece, if your pawn reaches the other side of the board it will be promoted to queen by default.\nYou can promote your pawn to other pieces if you like, r = Rook, b = Bishop, q = Queen, n = Knight. \nAn example move promoting a white pawn to a Knight would be **!a7a8n**")]
-        public async Task MoveAsync(string move)
+        [Summary("Move a piece on the board")]
+        public async Task MoveAsync([Summary("Moves a piece, if your pawn reaches the other side of the board it will be promoted to queen by default.\nYou can promote your pawn to other pieces if you like, r = Rook, b = Bishop, q = Queen, n = Knight. \nAn example move promoting a white pawn to a Knight would be **!a7a8n**")]string move)
         {
             await Context.Channel.TriggerTypingAsync();
             try
             {
-                using (MemoryStream stream = new MemoryStream())
+                using (var stream = new MemoryStream())
                 {
                     var result = await _chessService.Move(stream, Context.Guild.Id, Context.Channel.Id, Context.Message.Author, move);
-                    if (result.IsOver)
+                    if (result.Status != Cause.OnGoing)
                     {
-                        string str = "The match is over.";
+                        var str = "The match is over.";
                         if (result.WinnerId.HasValue)
                         {
-                            SocketGuildUser user = Context.Guild.GetUser(result.WinnerId.Value);
+                            var user = Context.Guild.GetUser(result.WinnerId.Value);
                             str += $" {user.Mention} has won the match";
                         }
                         if (result.IsCheckmated)
                             str += " by checkmating";
-                        var embedBuilder = new EmbedBuilder().WithImageUrl(result.ImageId).WithColor(EmbedColors.GetSuccessColor()).WithDescription(str);
-                        await ReplyAsync("", false, embedBuilder.Build(), (RequestOptions)null);
+                        var embedBuilder = new EmbedBuilder().WithImageUrl(result.ImageLink).WithColor(EmbedColors.GetSuccessColor()).WithDescription(str);
+                        await Context.Channel.SendFileAsync($"Chessboards/board{result.Match.Id}-{result.Match.HistoryList.Count}.png", embed: embedBuilder.Build());
                     }
                     else
                     {
-                        ulong num2 = _chessService.WhoseTurn(result.Match);
-                        string str = $"Your move {Context.Guild.GetUser(num2).Mention}.";
+                        var userId = _chessService.WhoseTurn(result);
+                        var str = $"Your move {Context.Guild.GetUser(userId).Mention}.";
                         if (result.IsCheck)
                             str += " Check!";
-                        EmbedBuilder embedBuilder = new EmbedBuilder().WithImageUrl(result.ImageId).WithColor(EmbedColors.GetSuccessColor()).WithDescription(str);
-                        await ReplyAsync("", false, embedBuilder.Build());
+                        var embedBuilder = new EmbedBuilder().WithImageUrl(result.ImageLink).WithColor(EmbedColors.GetSuccessColor()).WithDescription(str);
+                        await SendFileAsync($"Chessboards/board{result.Match.Id}-{result.Match.HistoryList.Count}.png", embed: embedBuilder.Build());
                     }
                 }
             }
             catch (ChessException ex)
             {
-                EmbedBuilder embedBuilder = new EmbedBuilder().WithDescription(ex.Message).WithColor(EmbedColors.GetErrorColor());
+                var embedBuilder = new EmbedBuilder().WithDescription(ex.Message).WithColor(EmbedColors.GetErrorColor());
                 await ReplyAsync("", false, embedBuilder.Build());
             }
         }

@@ -1,0 +1,102 @@
+﻿using Discord;
+using Discord.Rest;
+using Discord.Webhook;
+using Discord.WebSocket;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+
+namespace ArcadesBot
+{
+    public class WebhookService
+    {
+        HttpClient Httpclient { get; }
+        GuildHandler Guildhandler { get; }
+        DiscordSocketClient Client { get; }
+        private FileStream AvatarStream()
+        {
+            if (File.Exists("Avatar.jpg"))
+                return new FileStream("Avatar.jpg", FileMode.Open, FileAccess.Read);
+            else
+                return new FileStream(
+                    StringHelper.DownloadImageAsync(Httpclient, Client.CurrentUser.GetAvatarUrl()).GetAwaiter().GetResult(),
+                    FileMode.Open, FileAccess.Read);
+        }
+
+        public WebhookService(HttpClient httpClient, GuildHandler guild, DiscordSocketClient client)
+        {
+            Guildhandler = guild;
+            Client = client;
+            Httpclient = httpClient;
+        }
+
+        public DiscordWebhookClient WebhookClient(ulong id, string token)
+        {
+            try
+            {
+                return new DiscordWebhookClient(id, token);
+            }
+            catch
+            {
+                PrettyConsole.Log(LogSeverity.Error, "Webhook", $"Webhook {id} Failed.");
+                return null;
+            }
+        }
+
+        public async Task SendMessageAsync(WebhookOptions options)
+        {
+            if (!(this.Client.GetChannel(options.Webhook.TextChannel) is SocketTextChannel channel)) return;
+            var client = WebhookClient(options.Webhook.WebhookId, options.Webhook.WebhookToken);
+            await WebhookFallbackAsync(client, channel, options);
+        }
+
+        public async Task<WebhookWrapper> CreateWebhookAsync(SocketTextChannel channel, string name)
+        {
+            var get = await GetWebhookAsync(channel, new WebhookOptions
+            {
+                Name = name
+            });
+            var webhook = get ?? await channel.CreateWebhookAsync(name, AvatarStream());
+            return new WebhookWrapper
+            {
+                TextChannel = channel.Id,
+                WebhookId = webhook.Id,
+                WebhookToken = webhook.Token
+            };
+        }
+
+        public async Task<RestWebhook> GetWebhookAsync(SocketGuild guild, WebhookOptions options)
+            => (await guild?.GetWebhooksAsync())?.FirstOrDefault(x => x?.Name == options.Name || x?.Id == options.Webhook.WebhookId);
+
+        public async Task<RestWebhook> GetWebhookAsync(SocketTextChannel channel, WebhookOptions options)
+            => (await channel?.GetWebhooksAsync())?.FirstOrDefault(x => x?.Name == options.Name || x?.Id == options.Webhook.WebhookId);
+
+        public Task WebhookFallbackAsync(DiscordWebhookClient client, ITextChannel channel, WebhookOptions options)
+        {
+            if (client == null && channel != null)
+            {
+                PrettyConsole.Log(LogSeverity.Error, "WebhookFallback", $"Falling back to Channel: {channel.Name}");
+                return channel.SendMessageAsync(options.Message, embed: options.Embed);
+            }
+            return client.SendMessageAsync(options.Message, embeds: options.Embed == null ? null : new List<Embed>() { options.Embed });
+        }
+
+        public async Task<WebhookWrapper> UpdateWebhookAsync(SocketTextChannel channel, WebhookWrapper old, WebhookOptions options)
+        {
+            var hook = !(Client.GetChannel(old.TextChannel) is SocketTextChannel getChannel) ?
+                await GetWebhookAsync(channel.Guild, new WebhookOptions { Webhook = old }) :
+                await GetWebhookAsync(getChannel, new WebhookOptions { Webhook = old });
+            if (channel.Id == old.TextChannel && hook != null) return old;
+            else if (hook != null) await hook.DeleteAsync();
+            var New = await channel.CreateWebhookAsync(options.Name, AvatarStream());
+            return new WebhookWrapper
+            {
+                TextChannel = channel.Id,
+                WebhookId = New.Id,
+                WebhookToken = New.Token
+            };
+        }
+    }
+}

@@ -2,7 +2,7 @@
 
 namespace ArcadesBot
 {
-    public class AssetService : IAssetService
+    public class AssetService
     {
         public string GetImagePath(string name)
         {
