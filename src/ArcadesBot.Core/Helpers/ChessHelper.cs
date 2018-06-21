@@ -39,9 +39,6 @@ namespace ArcadesBot
         public ChessMatchModel GetMatch(ulong guildId, ulong channelId, ulong invokerId)
             =>  ChessHandler.GetMatches().FirstOrDefault(x => x.GuildId == guildId && x.ChannelId == channelId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId) && x.Winner == 1);
 
-        public ChessMatchModel GetMatch(string id)
-            => ChessHandler.GetMatches().FirstOrDefault(x => x.Id == id);
-
         public ChessMatchModel GetMatchByStatId(string id)
             =>  ChessHandler.GetMatches().FirstOrDefault(x => x.IdOfStat == id);
 
@@ -59,18 +56,18 @@ namespace ArcadesBot
         public void UpdateChessGame(ChessMatchStatusModel matchStatus)
         {
             var match = matchStatus.Match;
-            var player = matchStatus.Game.WhoseTurn == Player.White ? Player.Black : Player.White;
 
-            if (matchStatus.IsCheckmated)
+            switch (matchStatus.Status)
             {
-                // ReSharper disable once PossibleInvalidOperationException
-                match.Winner = (ulong)matchStatus.WinnerId;
-                match.EndBy = Cause.Checkmate;
-            }
-            else if (matchStatus.Game.IsStalemated(player))
-            {
-                match.Winner = 0;
-                match.EndBy = Cause.Stalemate;
+                case Cause.Checkmate:
+                    // ReSharper disable once PossibleInvalidOperationException
+                    match.Winner = (ulong)matchStatus.WinnerId;
+                    match.EndBy = Cause.Checkmate;
+                    break;
+                case Cause.Stalemate:
+                    match.Winner = 0;
+                    match.EndBy = Cause.Stalemate;
+                    break;
             }
 
             ChessHandler.UpdateMatch(match);

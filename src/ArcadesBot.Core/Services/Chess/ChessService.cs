@@ -42,40 +42,7 @@ namespace ArcadesBot
             processor.DrawImage(image, new Size(50, 50), new Point(x * 50 + 117, y * 50 + 19), new GraphicsOptions());
         }
 
-        public async Task<ChessMatchStatusModel> WriteBoard(string id, Stream stream)
-        {
-            var match = _chessHelper.GetMatch(id);
-            if (match.HistoryList == null)
-                throw new ChessException("This is not a Id that belongs to a match");
-            var moves = match.HistoryList.Select(x => x.Move);
-            var enumerable = moves.ToList();
-            var game = enumerable.Count != 0 
-                ? new ChessGame(enumerable, true) 
-                : new ChessGame();
-            if (match.Winner == 1)
-            {
-                var otherPlayer = game.WhoseTurn == Player.White ? Player.Black : Player.White;
-                var checkMated = game.IsCheckmated(Player.White) || game.IsCheckmated(Player.Black);
-                var isOver = checkMated || game.IsStalemated(otherPlayer);
-                var linkFromMatchAsync = await GetImageLinkFromMatchAsync(match, stream);
-                return new ChessMatchStatusModel
-                {
-                    ImageId = linkFromMatchAsync.ImageId,
-                    NextPlayerId = linkFromMatchAsync.NextPlayerId,
-                    IsOver = isOver,
-                    IsCheck = game.IsInCheck(otherPlayer),
-                    IsCheckmated = checkMated
-                };
-            }
-            return new ChessMatchStatusModel
-            {
-                ImageId = $"attachment://board{match.Id}-{match.HistoryList.Count}.png",
-                IsOver = true,
-                WinnerId = match.Winner
-            };
-        }
-
-        public async Task<ChessMatchStatusModel> WriteBoard(ulong guildId, ulong channelId, ulong playerId, Stream stream)
+        public async Task<ChessMatchStatusModel> WriteBoard(ulong guildId, ulong channelId, ulong playerId)
         {
             var match = _chessHelper.GetMatch(guildId, channelId, playerId);
             if (match == null)
@@ -87,21 +54,19 @@ namespace ArcadesBot
                 ? new ChessGame(enumerable, true) 
                 : new ChessGame();
             var otherPlayer = game.WhoseTurn == Player.White ? Player.Black : Player.White;
-            var isOver = game.IsCheckmated(otherPlayer) || game.IsStalemated(otherPlayer);
-            var linkFromMatchAsync = await GetImageLinkFromMatchAsync(match, stream);
-            return new ChessMatchStatusModel()
+            var linkFromMatchAsync = await GetImageLinkFromMatchAsync(match);
+            return new ChessMatchStatusModel
             {
                 Match = match,
-                ImageId = linkFromMatchAsync.ImageId,
-                NextPlayerId = linkFromMatchAsync.NextPlayerId,
-                IsOver = isOver,
+                ImageLink = linkFromMatchAsync.ImageLink,
+                NextPlayerId = linkFromMatchAsync.NextPlayer,
                 IsCheck = game.IsInCheck(otherPlayer),
                 IsCheckmated = game.IsCheckmated(otherPlayer)
             };
         }
 
 
-        private async Task<ChessMatchStatusModel> GetImageLinkFromMatchAsync(ChessMatchModel match, Stream stream)
+        private async Task<ImageLinkModel> GetImageLinkFromMatchAsync(ChessMatchModel match)
         {
             ChessMoveModel lastMove;
             await Task.Run(async () =>
@@ -203,7 +168,7 @@ namespace ArcadesBot
                     row = 5;
 
                     var image3 = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath("black_r.png"));
-                    for (var index = 2; index > row; --index)
+                    for (var index = 2; index > blackRookCount; --index)
                     {
                         if (index % 2 == 0)
                         {
@@ -259,7 +224,7 @@ namespace ArcadesBot
                     row = 7;
 
                     var blackBishop = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath("black_b.png"));
-                    for (var index = 2; index > row; --index)
+                    for (var index = 2; index > blackBishopCount; --index)
                     {
                         if (index % 2 == 0)
                             processor.DrawImage(blackBishop, new Size(30, 30), new Point(533, 16 + row * 30), new GraphicsOptions());
@@ -300,19 +265,19 @@ namespace ArcadesBot
                 });
                 board.Save($"{Directory.GetCurrentDirectory()}\\Chessboards\\board{match.Id}-{match.HistoryList.Count}.png");
             });
-            return new ChessMatchStatusModel
+            var nextPlayer = WhoseTurn(new ChessMatchStatusModel
             {
-                ImageId = $"attachment://board{match.Id}-{match.HistoryList.Count}.png",
-                
-                NextPlayerId = WhoseTurn(new ChessMatchStatusModel
+                Match = new ChessMatchModel
                 {
-                   Match = new ChessMatchModel{
-                       HistoryList = match.HistoryList,
-                       ChallengeeId = match.ChallengeeId,
-                       ChallengerId = match.ChallengerId,
-                        //ChessGame = game
-                   }
-                })
+                    HistoryList = match.HistoryList,
+                    ChallengeeId = match.ChallengeeId,
+                    ChallengerId = match.ChallengerId,
+                }
+            });
+            return new ImageLinkModel
+            {
+                ImageLink = $"attachment://board{match.Id}-{match.HistoryList.Count}.png",
+                NextPlayer = nextPlayer,
             };
         }
 
@@ -354,7 +319,7 @@ namespace ArcadesBot
 
         public async Task<ChessMatchStatusModel> Move(Stream stream, ulong guildId, ulong channelId, IUser player, string rawMove)
         {
-            var rankToRowMap = new Dictionary<int, int>()
+            var rankToRowMap = new Dictionary<int, int>
             {
                 {1, 7},
                 {2, 6},
@@ -373,11 +338,9 @@ namespace ArcadesBot
                 throw new ChessException("You are not currently in a game");
 
             var moves = match.HistoryList.Select(x => x.Move);
-            ChessGame game;
-            if (moves.Count() != 0)
-                game = new ChessGame(moves, true);
-            else
-                game = new ChessGame();
+            var game = moves.Count() != 0 
+                ? new ChessGame(moves, true) 
+                : new ChessGame();
             var whoseTurn = game.WhoseTurn;
             var otherPlayer = whoseTurn == Player.White ? Player.Black : Player.White;
             if (whoseTurn == Player.White && player.Id != match.ChallengerId || whoseTurn == Player.Black && player.Id != match.ChallengeeId)
@@ -398,7 +361,9 @@ namespace ArcadesBot
             var board = game.GetBoard();
             var file = int.Parse(sourcePositionX.ToString("d"));
             var collumn = rankToRowMap[int.Parse(sourceY)];
-            var pieceChar = board[file][collumn].GetFenCharacter();
+            if (board[collumn][file] == null)
+                throw new ChessException("Invalid move.");
+            var pieceChar = board[collumn][file].GetFenCharacter();
             var isPawn = pieceChar.ToString().ToLower() == "p";
             char? promotion;
             if (destY != "1" && destY != "8" || !isPawn)
@@ -406,6 +371,7 @@ namespace ArcadesBot
             else
                 promotion = moveInput[4].ToString().ToLower()[0];
             var move = new Move(originalPosition, newPosition, whoseTurn, promotion);
+
             if (!game.IsValidMove(move))
                 throw new ChessException("Invalid move.");
             var chessMove = new ChessMoveModel
@@ -415,15 +381,20 @@ namespace ArcadesBot
             };
             game.ApplyMove(move, true);
             match.HistoryList.Add(chessMove);
-            var checkMated = game.IsCheckmated(otherPlayer);
-            var isOver = checkMated || game.IsStalemated(otherPlayer);
-            var imageLinkValues = await GetImageLinkFromMatchAsync(match, stream);
+
+            var endCause = Cause.OnGoing;
+            if (game.IsStalemated(otherPlayer))
+                endCause = Cause.Stalemate;
+            else if (game.IsCheckmated(otherPlayer))
+                endCause = Cause.Checkmate;
+
+            var imageLinkValues = await GetImageLinkFromMatchAsync(match);
             var status = new ChessMatchStatusModel
             {
                 Game = game,
-                ImageId = imageLinkValues.ImageId,
-                IsOver = isOver,
-                WinnerId = isOver & checkMated ? (ulong?)player.Id : null,
+                ImageLink = imageLinkValues.ImageLink,
+                Status = endCause,
+                WinnerId = endCause == Cause.Checkmate ? (ulong?)player.Id : null,
                 IsCheck = game.IsInCheck(otherPlayer),
                 IsCheckmated = game.IsCheckmated(otherPlayer),
                 Match = match

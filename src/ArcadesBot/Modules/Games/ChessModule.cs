@@ -28,32 +28,29 @@ namespace ArcadesBot
         public async Task ShowAsync()
         {
             await Context.Channel.TriggerTypingAsync();
-            using (var stream = new MemoryStream())
+            try
             {
-                try
+                var chessMatchStatus = await _chessService.WriteBoard(Context.Guild.Id, Context.Channel.Id, Context.Message.Author.Id);
+                string str;
+                if (chessMatchStatus.Status != Cause.OnGoing)
                 {
-                    var chessMatchStatus = await _chessService.WriteBoard(Context.Guild.Id, Context.Channel.Id, Context.Message.Author.Id, stream);
-                    string str;
-                    if (chessMatchStatus.IsOver)
+                    str = "This match is over.";
+                    var winnerId = chessMatchStatus.WinnerId;
+                    if (winnerId != null)
                     {
-                        str = "This match is over.";
-                        var winnerId = chessMatchStatus.WinnerId;
-                        if (winnerId != null)
-                        {
-                            var user = Context.Guild.GetUser((ulong)winnerId);
-                            str += $" {user.Mention} has won the match.";
-                        }
+                        var user = Context.Guild.GetUser((ulong)winnerId);
+                        str += $" {user.Mention} has won the match.";
                     }
-                    else
-                        str = Context.Guild.GetUser(chessMatchStatus.NextPlayerId).Mention + " is up next";
-                    var embedBuilder = new EmbedBuilder().WithImageUrl(chessMatchStatus.ImageId).WithColor(EmbedColors.GetSuccessColor()).WithDescription(str);
-                    await Context.Channel.SendFileAsync($"Chessboards/board{chessMatchStatus.Match.Id}-{chessMatchStatus.Match.HistoryList.Count}.png", embed: embedBuilder.Build());
                 }
-                catch (ChessException ex)
-                {
-                    var embedBuilder = new EmbedBuilder().WithDescription(ex.Message).WithColor(EmbedColors.GetErrorColor());
-                    await ReplyAsync("", false, embedBuilder.Build());
-                }
+                else
+                    str = Context.Guild.GetUser(chessMatchStatus.NextPlayerId).Mention + " is up next";
+                var embedBuilder = new EmbedBuilder().WithImageUrl(chessMatchStatus.ImageLink).WithColor(EmbedColors.GetSuccessColor()).WithDescription(str);
+                await Context.Channel.SendFileAsync($"Chessboards/board{chessMatchStatus.Match.Id}-{chessMatchStatus.Match.HistoryList.Count}.png", embed: embedBuilder.Build());
+            }
+            catch (ChessException ex)
+            {
+                var embedBuilder = new EmbedBuilder().WithDescription(ex.Message).WithColor(EmbedColors.GetErrorColor());
+                await ReplyAsync("", false, embedBuilder.Build());
             }
         }
 
@@ -71,12 +68,10 @@ namespace ArcadesBot
                 {
                     var chessMatch = _chessService.AcceptChallenge(Context, Context.Message.Author);
                     embed = new EmbedBuilder().WithDescription($"Match has started between {Context.Guild.GetUser(chessMatch.ChallengerId).Mention} and {Context.Guild.GetUser(chessMatch.ChallengeeId).Mention}.").WithColor(EmbedColors.GetSuccessColor());
-                    using (var stream = new MemoryStream())
-                    {
-                        var chessMatchStatus = await _chessService.WriteBoard(Context.Guild.Id, Context.Channel.Id, Context.Message.Author.Id, stream);
-                        embed.WithImageUrl(chessMatchStatus.ImageId).WithDescription("Your move " + Context.Guild.GetUser(chessMatchStatus.NextPlayerId).Mention);
-                        await Context.Channel.SendFileAsync($"Chessboards/board{chessMatchStatus.Match.Id}-{chessMatchStatus.Match.HistoryList.Count}.png", embed: embed.Build());
-                    }
+
+                    var chessMatchStatus = await _chessService.WriteBoard(Context.Guild.Id, Context.Channel.Id, Context.Message.Author.Id);
+                    embed.WithImageUrl(chessMatchStatus.ImageLink).WithDescription("Your move " + Context.Guild.GetUser(chessMatchStatus.NextPlayerId).Mention);
+                    await Context.Channel.SendFileAsync($"Chessboards/board{chessMatchStatus.Match.Id}-{chessMatchStatus.Match.HistoryList.Count}.png", embed: embed.Build());
                 }
             }
             catch (ChessException ex)
@@ -252,7 +247,7 @@ namespace ArcadesBot
                 using (var stream = new MemoryStream())
                 {
                     var result = await _chessService.Move(stream, Context.Guild.Id, Context.Channel.Id, Context.Message.Author, move);
-                    if (result.IsOver)
+                    if (result.Status != Cause.OnGoing)
                     {
                         var str = "The match is over.";
                         if (result.WinnerId.HasValue)
@@ -262,7 +257,7 @@ namespace ArcadesBot
                         }
                         if (result.IsCheckmated)
                             str += " by checkmating";
-                        var embedBuilder = new EmbedBuilder().WithImageUrl(result.ImageId).WithColor(EmbedColors.GetSuccessColor()).WithDescription(str);
+                        var embedBuilder = new EmbedBuilder().WithImageUrl(result.ImageLink).WithColor(EmbedColors.GetSuccessColor()).WithDescription(str);
                         await Context.Channel.SendFileAsync($"Chessboards/board{result.Match.Id}-{result.Match.HistoryList.Count}.png", embed: embedBuilder.Build());
                     }
                     else
@@ -271,7 +266,7 @@ namespace ArcadesBot
                         var str = $"Your move {Context.Guild.GetUser(userId).Mention}.";
                         if (result.IsCheck)
                             str += " Check!";
-                        var embedBuilder = new EmbedBuilder().WithImageUrl(result.ImageId).WithColor(EmbedColors.GetSuccessColor()).WithDescription(str);
+                        var embedBuilder = new EmbedBuilder().WithImageUrl(result.ImageLink).WithColor(EmbedColors.GetSuccessColor()).WithDescription(str);
                         await SendFileAsync($"Chessboards/board{result.Match.Id}-{result.Match.HistoryList.Count}.png", embed: embedBuilder.Build());
                     }
                 }

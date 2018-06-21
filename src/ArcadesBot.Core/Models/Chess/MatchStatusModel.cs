@@ -7,11 +7,11 @@ namespace ArcadesBot
     {
         public ChessMatchModel Match { get; set; }
         public ChessGame Game { get; set; }
-        public string ImageId { get; set; }
-        public bool IsOver { get; set; }
+        public string ImageLink { get; set; }
         public bool IsCheck { get; set; }
         public ulong? WinnerId { get; set; }
         public ulong NextPlayerId { get; set; }
+        public Cause Status { get; set; }
         public bool IsCheckmated { get; set; }
     }
 }
