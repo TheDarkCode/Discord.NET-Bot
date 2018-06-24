@@ -12,7 +12,6 @@ namespace ArcadesBot
         public ModWrapper Mod { get; set; } = new ModWrapper();
         public List<ulong> AssignableRoles { get; set; } = new List<ulong>(10);
         public Dictionary<ulong, string> Afk { get; set; } = new Dictionary<ulong, string>();
-        public List<MessageWrapper> DeletedMessages { get; set; } = new List<MessageWrapper>();
         public List<ulong> BlackListedChannels { get; set; } = new List<ulong>();
         public WebhookWrapper JoinWebhook { get; set; } = new WebhookWrapper();
         public WebhookWrapper LeaveWebhook { get; set; } = new WebhookWrapper();

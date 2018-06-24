@@ -43,10 +43,7 @@ namespace ArcadesBot
         public IMessageChannel Channel { get; }
         public IDocumentSession Session { get; }
         public GuildHandler GuildHandler { get; }
-        public IServiceProvider Provider { get; }
         public WebhookService WebhookService { get; }
-
-        public bool IsPrivate => Channel is IPrivateChannel;
 
         //ICommandContext
         IDiscordClient ICommandContext.Client => Client;

@@ -1,6 +1,5 @@
-﻿using System.Drawing;
+﻿using Discord;
 using Raven.Client.Documents;
-using Discord;
 
 namespace ArcadesBot
 {
