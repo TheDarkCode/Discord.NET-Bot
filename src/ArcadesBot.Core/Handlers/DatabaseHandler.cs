@@ -14,8 +14,8 @@ namespace ArcadesBot
 {
     public class DatabaseHandler
     {
-        IDocumentStore Store { get; }
-        ConfigHandler Config { get; }
+        private IDocumentStore Store { get; }
+        private ConfigHandler Config { get; }
         public DatabaseHandler(IDocumentStore store, ConfigHandler config)
         {
             Store = store;
@@ -54,20 +54,8 @@ namespace ArcadesBot
                 return;
 
             PrettyConsole.Log(LogSeverity.Warning, "Database", $"Database {DbConfig.DatabaseName} doesn't exist!");
-            _ = await Store.Maintenance.Server.SendAsync(new CreateDatabaseOperation(new DatabaseRecord(DbConfig.DatabaseName)));
+            await Store.Maintenance.Server.SendAsync(new CreateDatabaseOperation(new DatabaseRecord(DbConfig.DatabaseName)));
             PrettyConsole.Log(LogSeverity.Info, "Database", $"Created Database{DbConfig.DatabaseName}.");
-            PrettyConsole.Log(LogSeverity.Info, "Database", "Setting up backup operation...");
-
-            _ = await Store.Maintenance.SendAsync(new UpdatePeriodicBackupOperation(new PeriodicBackupConfiguration
-            {
-                Name = "Backup",
-                BackupType = BackupType.Backup,
-                FullBackupFrequency = "*/10 * * * *",
-                IncrementalBackupFrequency = "0 2 * * *",
-                LocalSettings = new LocalSettings { FolderPath = DbConfig.BackupLocation }
-            })).ConfigureAwait(false);
-
-            PrettyConsole.Log(LogSeverity.Info, "Database", "Finished backup operation!");
         }
     }
 }

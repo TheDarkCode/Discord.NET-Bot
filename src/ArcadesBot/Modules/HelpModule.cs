@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace ArcadesBot.Modules
 {
     [Group("help"), Name("Help")]
-    public class HelpModule : ModuleBase<CustomCommandContext>
+    public class HelpModule : Base
     {
         private readonly CommandService _commands;
         private readonly IServiceProvider _provider;
@@ -50,7 +50,7 @@ namespace ArcadesBot.Modules
 
             embed.WithColor(EmbedColors.GetSuccessColor());
 
-            await ReplyAsync("", embed: embed.Build());
+            await ReplyEmbedAsync(embed: embed.Build());
         }
 
         [Command]
@@ -66,13 +66,13 @@ namespace ArcadesBot.Modules
                     if (moduleName.Substring(0, prefix.Length) == prefix)
                     {
                         var commandName = moduleName.Substring(prefix.Length);
-                        var command = _commands.Commands.FirstOrDefault(x => x.Aliases.Any(z => z.ToLower() == commandName.ToLower()));
+                        var command = _commands.Commands.FirstOrDefault(x => x.Aliases.Any(z => string.Equals(z, commandName, StringComparison.CurrentCultureIgnoreCase)));
                         await HelpAsync(command.Module.Name, moduleName.Substring(1));
                         return;
                     }
                 }
                 catch(ArgumentOutOfRangeException) {}
-                await ReplyAsync($"The module `{moduleName}` does not exist.");
+                await ReplyEmbedAsync($"The module `{moduleName}` does not exist.");
                 return;
             }
 
@@ -83,7 +83,7 @@ namespace ArcadesBot.Modules
 
             if (!commands.Any())
             {
-                await ReplyAsync($"The module `{module.Name}` has no available commands :(");
+                await ReplyEmbedAsync($"The module `{module.Name}` has no available commands :(");
                 return;
             }
 
@@ -99,7 +99,7 @@ namespace ArcadesBot.Modules
 
             embed.WithColor(EmbedColors.GetSuccessColor());
 
-            await ReplyAsync("", embed: embed.Build());
+            await ReplyEmbedAsync(embed: embed.Build());
         }
 
         private async Task HelpAsync(string moduleName, string commandName)
@@ -110,15 +110,15 @@ namespace ArcadesBot.Modules
 
             if (module == null)
             {
-                await ReplyAsync($"The module `{moduleName}` does not exist.");
+                await ReplyEmbedAsync($"The module `{moduleName}` does not exist.");
                 return;
             }
 
             var commands = module.Commands.Where(x => !string.IsNullOrWhiteSpace(x.Summary));
 
-            if (commands.Count() == 0)
+            if (commands.Any())
             {
-                await ReplyAsync($"The module `{module.Name}` has no available commands :(");
+                await ReplyEmbedAsync($"The module `{module.Name}` has no available commands :(");
                 return;
             }
 
@@ -160,7 +160,7 @@ namespace ArcadesBot.Modules
 
             embed.WithColor(EmbedColors.GetSuccessColor());
 
-            await ReplyAsync("", embed: embed.Build());
+            await ReplyEmbedAsync(embed: embed.Build());
         }
         private string GetPrefix(CustomCommandContext context)
             => context.Server.Prefix ?? null;

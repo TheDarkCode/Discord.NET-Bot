@@ -10,25 +10,31 @@ namespace ArcadesBot
 {
     public class Base : ModuleBase<CustomCommandContext>
     {
+        public async Task<IUserMessage> ReplyEmbedAsync(string description = "", Embed embed = null, DocumentType document = DocumentType.None)
+        {
+            if(embed == null)
+                embed = new EmbedBuilder().WithDescription(description).Build();
+            return await ReplyAsync("", embed, document);
+        }
         public async Task<IUserMessage> ReplyAsync(string message, Embed embed = null, DocumentType document = DocumentType.None)
         {
             await Context.Channel.TriggerTypingAsync();
             _ = Task.Run(() => SaveDocuments(document));
-            return await base.ReplyAsync(message, false, embed, null);
+            return await base.ReplyAsync(message, false, embed);
         }
         public async Task<IUserMessage> SendFileAsync(Stream stream, string fileName, string text = "", Embed embed = null)
         {
             await Context.Channel.TriggerTypingAsync();
-            return await Context.Channel.SendFileAsync(stream, fileName, text, false, embed, null);
+            return await Context.Channel.SendFileAsync(stream, fileName, text, false, embed);
         }
         public async Task<IUserMessage> SendFileAsync(string fileName, string text = "", Embed embed = null)
         {
             await Context.Channel.TriggerTypingAsync();
-            return await Context.Channel.SendFileAsync(fileName, text, false, embed, null);
+            return await Context.Channel.SendFileAsync(fileName, text, false, embed);
         }
         private void SaveDocuments(DocumentType document)
         {
-            var check = false;
+            bool check;
             switch (document)
             {
                 case DocumentType.None:
@@ -42,6 +48,8 @@ namespace ArcadesBot
                     Context.GuildHandler.Update(Context.Server);
                     check = !Context.Session.Advanced.HasChanges;
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(document), document, null);
             }
             if (check == false)
                 PrettyConsole.Log(LogSeverity.Warning, "Database", $"Failed to save {document} document.");

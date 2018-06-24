@@ -48,7 +48,6 @@ namespace ArcadesBot
             _discord.LeftGuild += LeftGuild;
             _discord.GuildAvailable += GuildAvailable;
             _discord.Disconnected += Disconnected;
-            _discord.MessageDeleted += MessageDeletedAsync;
             _discord.JoinedGuild += JoinedGuildAsync;
             _discord.UserJoined += UserJoinedAsync;
             _discord.UserLeft += UserLeftAsync;
@@ -56,19 +55,8 @@ namespace ArcadesBot
             PrettyConsole.Log(LogSeverity.Info, "Commands", $"Loaded {_commands.Modules.Count()} modules with {_commands.Commands.Count()} commands");
         } 
 
-        public async Task ExecuteAsync(CustomCommandContext context, IServiceProvider provider, int argPos)
-        {
-            var result = await _commands.ExecuteAsync(context, argPos, provider);
-            await ResultAsync(context, result);
-        }
 
-        public async Task ExecuteAsync(CustomCommandContext context, IServiceProvider provider, string input)
-        {
-            var result = await _commands.ExecuteAsync(context, input, provider);
-            await ResultAsync(context, result);
-        }
-
-        private async Task ResultAsync(CustomCommandContext context, IResult result)
+        internal async Task ResultAsync(CustomCommandContext context, IResult result)
         {
             if (result.IsSuccess)
                 return;
@@ -105,7 +93,7 @@ namespace ArcadesBot
                     break;
                 case CommandError.UnmetPrecondition:
                     if (!result.ErrorReason.Contains("SendMessages"))
-                        await context.Channel.SendMessageAsync(result?.ErrorReason);
+                        await context.Channel.SendMessageAsync(result.ErrorReason);
                     break;
                 case CommandError.BadArgCount:
                     var name = command.Module != null && command.Name.Contains("Async")
@@ -166,21 +154,6 @@ namespace ArcadesBot
             _cancellationToken = new CancellationTokenSource();
             PrettyConsole.Log(LogSeverity.Info, "Connected", "Connected to Discord.");
             return Task.CompletedTask;
-        }
-        internal async Task MessageDeletedAsync(Cacheable<IMessage, ulong> cache, ISocketMessageChannel channel)
-        {
-            var config = _guildhandler.GetGuild((channel as SocketGuildChannel).Guild.Id);
-            var message = await cache.GetOrDownloadAsync();
-            if (message == null || config == null || !config.Mod.LogDeletedMessages || message.Author.IsBot) return;
-            config.DeletedMessages.Add(new MessageWrapper
-            {
-                ChannelId = channel.Id,
-                MessageId = message.Id,
-                AuthorId = message.Author.Id,
-                DateTime = message.Timestamp.DateTime,
-                Content = message.Content ?? message.Attachments.FirstOrDefault()?.Url
-            });
-            _guildhandler.Update(config);
         }
         internal async Task JoinedGuildAsync(SocketGuild guild)
         {

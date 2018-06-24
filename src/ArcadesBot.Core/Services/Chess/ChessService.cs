@@ -15,14 +15,16 @@ namespace ArcadesBot
 {
     public class ChessService
     {
-        private readonly AssetService _assetService;
-        private readonly ChessHelper _chessHelper;
-
         public ChessService(AssetService assetService, ChessHelper chessHelper)
         {
             _chessHelper = chessHelper;
             _assetService = assetService;
         }
+
+        private readonly AssetService _assetService;
+        private readonly ChessHelper _chessHelper;
+
+        #region Public Methods
 
         public ulong WhoseTurn(ChessMatchStatusModel match)
         {
@@ -34,12 +36,6 @@ namespace ArcadesBot
             }
 
             return match.Game.WhoseTurn != Player.White ? match.Match.ChallengeeId : match.Match.ChallengerId;
-        }
-
-        private void DrawImage(IImageProcessingContext<Rgba32> processor, string name, int x, int y)
-        {
-            var image = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath($"{name}.png"));
-            processor.DrawImage(image, new Size(50, 50), new Point(x * 50 + 117, y * 50 + 19), new GraphicsOptions());
         }
 
         public async Task<ChessMatchStatusModel> WriteBoard(ulong guildId, ulong channelId, ulong playerId)
@@ -66,9 +62,142 @@ namespace ArcadesBot
         }
 
 
+        
+
+        public ChessChallengeModel Challenge(ulong guildId, ulong channelId, IUser player1, IUser player2, Action<ChessChallengeModel> onTimeout = null)
+        {
+            if (player1.Equals(player2))
+                throw new ChessException("You can't challenge yourself.");
+            if (_chessHelper.CheckPlayerInMatch(guildId, player1.Id))
+                throw new ChessException($"{player1.Mention} is currently in a game.");
+            if (_chessHelper.CheckPlayerInMatch(guildId, player2.Id))
+                throw new ChessException($"{player2.Mention} is currently in a game.");
+
+            var challenge = _chessHelper.CreateChallenge(guildId, channelId, player1, player2);
+            RemoveChallenge(challenge, onTimeout);
+            return challenge;
+        }
+
+        public ulong Resign(ulong guildId, ulong channelId, IUser player)
+            => _chessHelper.Resign(guildId, channelId, player.Id);
+
+        public ChessMatchModel AcceptChallenge(CustomCommandContext context, IUser player)
+        {
+            var challenge = _chessHelper.GetChallenge(context.Guild.Id, context.Channel.Id, player.Id);
+
+            if (challenge == null)
+                throw new ChessException("No challenge exists for you to accept.");
+
+            if (_chessHelper.CheckPlayerInMatch(context.Guild.Id, challenge.ChallengeeId))
+                throw new ChessException(string.Format("{0} is currently in a game.", context.Guild.GetUser(challenge.ChallengeeId)));
+
+            var challengee = context.Client.GetUser(challenge.ChallengeeId);
+            var challenger = context.Client.GetUser(challenge.ChallengerId);
+
+            var blackUrl = challengee.GetAvatarUrl() ?? challengee.GetDefaultAvatarUrl();
+            var whiteUrl = challenger.GetAvatarUrl() ?? challenger.GetDefaultAvatarUrl();
+
+            return _chessHelper.AcceptChallenge(challenge, blackUrl, whiteUrl);
+        }
+
+        public async Task<ChessMatchStatusModel> Move(Stream stream, ulong guildId, ulong channelId, IUser player, string rawMove)
+        {
+            var rankToRowMap = new Dictionary<int, int>
+            {
+                {1, 7},
+                {2, 6},
+                {3, 5},
+                {4, 4},
+                {5, 3},
+                {6, 2},
+                {7, 1},
+                {8, 0}
+            };
+            var moveInput = rawMove.Replace(" ", "").ToUpper();
+            if (!Regex.IsMatch(moveInput, "^[A-H][1-8][A-H][1-8][Q|N|B|R]?$"))
+                throw new ChessException("Error parsing move. Example move: a2a4");
+            var match = _chessHelper.GetMatch(guildId, channelId, player.Id);
+            if (match == null)
+                throw new ChessException("You are not currently in a game");
+
+            var moves = match.HistoryList.Select(x => x.Move);
+            var game = moves.Count() != 0 
+                ? new ChessGame(moves, true) 
+                : new ChessGame();
+            var whoseTurn = game.WhoseTurn;
+            var otherPlayer = whoseTurn == Player.White ? Player.Black : Player.White;
+            if (whoseTurn == Player.White && player.Id != match.ChallengerId || whoseTurn == Player.Black && player.Id != match.ChallengeeId)
+                throw new ChessException("It's not your turn.");
+
+            var sourceX = moveInput[0].ToString();
+            var sourceY = moveInput[1].ToString();
+            var destX = moveInput[2].ToString();
+            var destY = moveInput[3].ToString();
+
+            var positionEnumValues = (IEnumerable<ChessDotNet.File>)Enum.GetValues(typeof(ChessDotNet.File));
+            var sourcePositionX = positionEnumValues.Single(x => x.ToString("g") == sourceX);
+            var destPositionX = positionEnumValues.Single(x => x.ToString("g") == destX);
+
+            var originalPosition = new Position(sourcePositionX, int.Parse(sourceY));
+            var newPosition = new Position(destPositionX, int.Parse(destY));
+
+            var board = game.GetBoard();
+            var file = int.Parse(sourcePositionX.ToString("d"));
+            var collumn = rankToRowMap[int.Parse(sourceY)];
+            if (board[collumn][file] == null)
+                throw new ChessException("Invalid move.");
+            var pieceChar = board[collumn][file].GetFenCharacter();
+            var isPawn = pieceChar.ToString().ToLower() == "p";
+            char? promotion;
+            if (destY != "1" && destY != "8" || !isPawn)
+                promotion = null;
+            else
+                promotion = moveInput[4].ToString().ToLower()[0];
+            var move = new Move(originalPosition, newPosition, whoseTurn, promotion);
+
+            if (!game.IsValidMove(move))
+                throw new ChessException("Invalid move.");
+            var chessMove = new ChessMoveModel
+            {
+                Move = move,
+                MoveDate = DateTime.Now
+            };
+            game.ApplyMove(move, true);
+            match.HistoryList.Add(chessMove);
+
+            var endCause = Cause.OnGoing;
+            if (game.IsStalemated(otherPlayer))
+                endCause = Cause.Stalemate;
+            else if (game.IsCheckmated(otherPlayer))
+                endCause = Cause.Checkmate;
+
+            var imageLinkValues = await GetImageLinkFromMatchAsync(match);
+            var status = new ChessMatchStatusModel
+            {
+                Game = game,
+                ImageLink = imageLinkValues.ImageLink,
+                Status = endCause,
+                WinnerId = endCause == Cause.Checkmate ? (ulong?)player.Id : null,
+                IsCheck = game.IsInCheck(otherPlayer),
+                IsCheckmated = game.IsCheckmated(otherPlayer),
+                Match = match
+            };
+            _chessHelper.UpdateChessGame(status);
+            return await Task.FromResult(status);
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private void DrawImage(IImageProcessingContext<Rgba32> processor, string name, int x, int y)
+        {
+            var image = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath($"{name}.png"));
+            processor.DrawImage(image, new Size(50, 50), new Point(x * 50 + 117, y * 50 + 19), new GraphicsOptions());
+        }
+
         private async Task<ImageLinkModel> GetImageLinkFromMatchAsync(ChessMatchModel match)
         {
-            ChessMoveModel lastMove;
             await Task.Run(async () =>
             {
                 var board = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath("board.png"));
@@ -80,13 +209,13 @@ namespace ArcadesBot
                 httpClient.Dispose();
 
                 var moves = match.HistoryList.Select(x => x.Move);
-                
+
                 var game = moves.Count() != 0 ? new ChessGame(moves, true) : new ChessGame();
-                
+
                 var boardPieces = game.GetBoard();
 
-                lastMove = match.HistoryList.OrderByDescending((x => x.MoveDate)).FirstOrDefault();
-                var rankToRowMap = new Dictionary<int, int>()
+                var lastMove = match.HistoryList.OrderByDescending((x => x.MoveDate)).FirstOrDefault();
+                var rankToRowMap = new Dictionary<int, int>
                 {
                     {1, 7},
                     {2, 6},
@@ -265,6 +394,7 @@ namespace ArcadesBot
                 });
                 board.Save($"{Directory.GetCurrentDirectory()}\\Chessboards\\board{match.Id}-{match.HistoryList.Count}.png");
             });
+
             var nextPlayer = WhoseTurn(new ChessMatchStatusModel
             {
                 Match = new ChessMatchModel
@@ -281,128 +411,6 @@ namespace ArcadesBot
             };
         }
 
-        public ChessChallengeModel Challenge(ulong guildId, ulong channelId, IUser player1, IUser player2, Action<ChessChallengeModel> onTimeout = null)
-        {
-            if (player1.Equals(player2))
-                throw new ChessException("You can't challenge yourself.");
-            if (_chessHelper.CheckPlayerInMatch(guildId, player1.Id))
-                throw new ChessException($"{player1.Mention} is currently in a game.");
-            if (_chessHelper.CheckPlayerInMatch(guildId, player2.Id))
-                throw new ChessException($"{player2.Mention} is currently in a game.");
-
-            var challenge = _chessHelper.CreateChallenge(guildId, channelId, player1, player2);
-            RemoveChallenge(challenge, onTimeout);
-            return challenge;
-        }
-
-        public ulong Resign(ulong guildId, ulong channelId, IUser player)
-            => _chessHelper.Resign(guildId, channelId, player.Id);
-
-        public ChessMatchModel AcceptChallenge(CustomCommandContext context, IUser player)
-        {
-            var challenge = _chessHelper.GetChallenge(context.Guild.Id, context.Channel.Id, player.Id);
-
-            if (challenge == null)
-                throw new ChessException("No challenge exists for you to accept.");
-
-            if (_chessHelper.CheckPlayerInMatch(context.Guild.Id, challenge.ChallengeeId))
-                throw new ChessException(string.Format("{0} is currently in a game.", context.Guild.GetUser(challenge.ChallengeeId)));
-
-            var challengee = context.Client.GetUser(challenge.ChallengeeId);
-            var challenger = context.Client.GetUser(challenge.ChallengerId);
-
-            var blackUrl = challengee.GetAvatarUrl() ?? challengee.GetDefaultAvatarUrl();
-            var whiteUrl = challenger.GetAvatarUrl() ?? challenger.GetDefaultAvatarUrl();
-
-            return _chessHelper.AcceptChallenge(challenge, blackUrl, whiteUrl);
-        }
-
-        public async Task<ChessMatchStatusModel> Move(Stream stream, ulong guildId, ulong channelId, IUser player, string rawMove)
-        {
-            var rankToRowMap = new Dictionary<int, int>
-            {
-                {1, 7},
-                {2, 6},
-                {3, 5},
-                {4, 4},
-                {5, 3},
-                {6, 2},
-                {7, 1},
-                {8, 0}
-            };
-            var moveInput = rawMove.Replace(" ", "").ToUpper();
-            if (!Regex.IsMatch(moveInput, "^[A-H][1-8][A-H][1-8][Q|N|B|R]?$"))
-                throw new ChessException("Error parsing move. Example move: a2a4");
-            var match = _chessHelper.GetMatch(guildId, channelId, player.Id);
-            if (match == null)
-                throw new ChessException("You are not currently in a game");
-
-            var moves = match.HistoryList.Select(x => x.Move);
-            var game = moves.Count() != 0 
-                ? new ChessGame(moves, true) 
-                : new ChessGame();
-            var whoseTurn = game.WhoseTurn;
-            var otherPlayer = whoseTurn == Player.White ? Player.Black : Player.White;
-            if (whoseTurn == Player.White && player.Id != match.ChallengerId || whoseTurn == Player.Black && player.Id != match.ChallengeeId)
-                throw new ChessException("It's not your turn.");
-
-            var sourceX = moveInput[0].ToString();
-            var sourceY = moveInput[1].ToString();
-            var destX = moveInput[2].ToString();
-            var destY = moveInput[3].ToString();
-
-            var positionEnumValues = (IEnumerable<ChessDotNet.File>)Enum.GetValues(typeof(ChessDotNet.File));
-            var sourcePositionX = positionEnumValues.Single(x => x.ToString("g") == sourceX);
-            var destPositionX = positionEnumValues.Single(x => x.ToString("g") == destX);
-
-            var originalPosition = new Position(sourcePositionX, int.Parse(sourceY));
-            var newPosition = new Position(destPositionX, int.Parse(destY));
-
-            var board = game.GetBoard();
-            var file = int.Parse(sourcePositionX.ToString("d"));
-            var collumn = rankToRowMap[int.Parse(sourceY)];
-            if (board[collumn][file] == null)
-                throw new ChessException("Invalid move.");
-            var pieceChar = board[collumn][file].GetFenCharacter();
-            var isPawn = pieceChar.ToString().ToLower() == "p";
-            char? promotion;
-            if (destY != "1" && destY != "8" || !isPawn)
-                promotion = null;
-            else
-                promotion = moveInput[4].ToString().ToLower()[0];
-            var move = new Move(originalPosition, newPosition, whoseTurn, promotion);
-
-            if (!game.IsValidMove(move))
-                throw new ChessException("Invalid move.");
-            var chessMove = new ChessMoveModel
-            {
-                Move = move,
-                MoveDate = DateTime.Now
-            };
-            game.ApplyMove(move, true);
-            match.HistoryList.Add(chessMove);
-
-            var endCause = Cause.OnGoing;
-            if (game.IsStalemated(otherPlayer))
-                endCause = Cause.Stalemate;
-            else if (game.IsCheckmated(otherPlayer))
-                endCause = Cause.Checkmate;
-
-            var imageLinkValues = await GetImageLinkFromMatchAsync(match);
-            var status = new ChessMatchStatusModel
-            {
-                Game = game,
-                ImageLink = imageLinkValues.ImageLink,
-                Status = endCause,
-                WinnerId = endCause == Cause.Checkmate ? (ulong?)player.Id : null,
-                IsCheck = game.IsInCheck(otherPlayer),
-                IsCheckmated = game.IsCheckmated(otherPlayer),
-                Match = match
-            };
-            _chessHelper.UpdateChessGame(status);
-            return await Task.FromResult(status);
-        }
-
         private async void RemoveChallenge(ChessChallengeModel challenge, Action<ChessChallengeModel> onTimeout)
         {
             while (challenge.TimeoutDate > DateTime.Now)
@@ -412,5 +420,6 @@ namespace ArcadesBot
                 return;
             onTimeout?.Invoke(challenge);
         }
+        #endregion
     }
 }

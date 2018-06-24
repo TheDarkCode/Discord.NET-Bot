@@ -132,96 +132,34 @@ namespace ArcadesBot
         [RequireContext(ContextType.Guild)]
         [Command("stats")]
         [Summary("Currently a filler command")]
-        public async Task StatsAsync([Summary("Availible Scopes:\n - User (Default)\n - Guild\n - Global")]Scope scope = Scope.User)
+        public async Task StatsAsync(IUser user = null)
         {
-            IEnumerable<ChessMatchStatsModel> stats;
-            ChessMatchStatsModel lastGame = null;
+            if (user == null)
+                user = Context.User;
             var embed = new EmbedBuilder();
-            switch (scope)
+
+            embed.WithAuthor(Context.User).WithDescription($"Stats for {user}");
+            var stats = _chessHelper.GetStatsFromUser(user.Id, Context.Guild.Id);
+            var lastGame = stats.OrderByDescending(x => x.EndDate).FirstOrDefault();
+            if (lastGame == null)
+                embed.AddField("No games found on this server", "");
+            else
             {
-                case Scope.User:
-                    embed.WithAuthor(Context.User).WithDescription($"Stats for {Context.User}");
-                    stats =  _chessHelper.GetStatsFromUser(Context.User.Id, Context.Guild.Id);
-                    lastGame = stats.OrderByDescending(x => x.EndDate).FirstOrDefault();
-                    if (lastGame == null)
-                        embed.AddField("No games found on this server", "");
-                    else
-                    {
-                        embed.AddField(
-                            "Games completed",
-                            stats.Count(),
-                            true
-                        ).AddField(
-                            "Amount of games won",
-                            stats.Count(x => x.Winner == Context.User.Id),
-                            true
-                        ).AddField(
-                            "Last game",
-                            lastGame.Winner == Context.User.Id
-                                ? $"Won by {lastGame.EndBy}"
-                                : $"Lost by {lastGame.EndBy}",
-                            true
-                        ).WithUrl($"attachment://board{lastGame.Id}-{lastGame.MoveCount}.png");
-                    }
-
-                    break;
-                case Scope.Guild:
-                    embed.WithAuthor(Context.Guild.IconUrl).WithDescription($"Stats for {Context.Guild}");
-                    stats = _chessHelper.GetStatsByGuild(Context.Guild.Id);
-                    lastGame = stats.OrderByDescending(x => x.EndDate).FirstOrDefault();
-                    if (lastGame == null)
-                        embed.AddField("No games found on this server", "");
-                    else
-                    {
-                        embed.AddField(
-                            "Games completed",
-                            stats.Count(),
-                            true
-                        ).AddField(
-                            "Amount of games won",
-                            stats.Count(x => x.Winner == Context.User.Id),
-                            true
-                        ).AddField(
-                            "Last game",
-                            lastGame.Winner == Context.User.Id
-                                ? $"Won by {lastGame.EndBy}"
-                                : $"Lost by {lastGame.EndBy}",
-                            true
-                        ).WithImageUrl($"attachment://board{lastGame.Id}-{lastGame.MoveCount}.png");
-                    }
-
-                    break;
-                case Scope.Global:
-                    embed.WithAuthor(Context.User).WithDescription($"Stats for {Context.Guild}");
-                    stats = _chessHelper.GetGlobalStats();
-                    lastGame = stats.OrderByDescending(x => x.EndDate).FirstOrDefault();
-                    if (lastGame == null)
-                    {
-                        embed.AddField("No games found globally", "");
-                        break;
-                    }
-                    else
-                    {
-                        double gamesCount = stats.Count();
-                        double challengerWinnerCount = stats.Count(x => x.Winner == x.CreatedBy);
-                        var division = challengerWinnerCount / gamesCount;
-                        embed.AddField(
-                            "Games completed",
-                            stats.Count(),
-                            true
-                        ).AddField(
-                            "Won by challenger",
-                            Math.Round(division * 100, 2) + "%",
-                            true
-                        ).AddField(
-                            "Last game",
-                            lastGame.Winner == Context.User.Id
-                                ? $"Won by {lastGame.EndBy}"
-                                : $"Lost by {lastGame.EndBy}",
-                            true
-                        ).WithImageUrl($"attachment://board{lastGame.Id}-{lastGame.MoveCount}.png");
-                        break;
-                    }
+                embed.AddField(
+                    "Games completed",
+                    stats.Count,
+                    true
+                ).AddField(
+                    "Amount of games won",
+                    stats.Count(x => x.Winner == user.Id),
+                    true
+                ).AddField(
+                    "Last game",
+                    lastGame.Winner == user.Id
+                        ? $"Won by {lastGame.EndBy}"
+                        : $"Lost by {lastGame.EndBy}",
+                    true
+                ).WithUrl($"attachment://board{lastGame.Id}-{lastGame.MoveCount}.png");
             }
 
             if (lastGame != null)
@@ -232,7 +170,7 @@ namespace ArcadesBot
                     embed: embed.Build());
             }
             else
-                await ReplyAsync("", embed: embed.Build());
+                await ReplyAsync("", embed.Build());
         }
 
 

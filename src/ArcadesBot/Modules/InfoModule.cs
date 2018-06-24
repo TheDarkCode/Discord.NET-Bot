@@ -10,7 +10,7 @@ namespace ArcadesBot.Modules
     
     [Group("info"), Name("Info")]
     [Summary("")]
-    public class InfoModule : ModuleBase<CustomCommandContext>
+    public class InfoModule : Base
     {
         private readonly Process _process;
 
@@ -33,7 +33,7 @@ namespace ArcadesBot.Modules
                 .AddField("Uptime", GetUptime(), true)
                 .WithFooter(x => x.Text = GetLibrary());
 
-            await ReplyAsync("", embed: builder.Build());
+            await ReplyEmbedAsync(embed: builder.Build());
         }
 
         public string GetUptime()

@@ -8,42 +8,23 @@ namespace ArcadesBot
 {
     public class ChessHandler
     {
-        private IDocumentStore Store { get; }
-        public ChessStatsHandler Stats { get; set; }
-
         public ChessHandler(IDocumentStore store, ChessStatsHandler stats)
         {
             Store = store;
-            Stats = stats;
+            StatsHandler = stats;
         }
+        private IDocumentStore Store { get; }
+        private ChessStatsHandler StatsHandler { get; }
 
-        public List<ChessMatchModel> GetMatches()
-        {
-            using (var session = Store.OpenSession())
-                return session.Query<ChessMatchModel>().ToList();
-        }
-        public List<ChessChallengeModel> GetChallenges()
-        {
-            using (var session = Store.OpenSession())
-                return session.Query<ChessChallengeModel>().ToList();
-        }
-        public List<ChessMatchStatsModel> GetStats(ulong? user = null, ulong? guildId = null)
-        {
-            using (var session = Store.OpenSession())
-            {
-                if (user != null)
-                    return session.Query<ChessMatchStatsModel>().Where(x => x.Participants.Contains((ulong) user) && x.GuildId == guildId).ToList();
 
-                if (guildId != null)
-                    return session.Query<ChessMatchStatsModel>().Where(x => x.GuildId == guildId).ToList();
+        public List<ChessMatchModel> Matches => GetMatches();
+        public List<ChessChallengeModel> Challenges => GetChallenges();
+        public List<ChessMatchStatsModel> Stats => GetStats();
 
-                return session.Query<ChessMatchStatsModel>().ToList();
-            }
-                
-        }
+        #region Public Methods
         public void CompleteMatch(ref ChessMatchModel chessMatch)
         {
-            var statId = Stats.AddStat(chessMatch);
+            var statId = StatsHandler.AddStat(chessMatch);
             chessMatch.IdOfStat = statId;
             PrettyConsole.Log(LogSeverity.Info, "Complete ChessMatch", $"Completed Chess Match With Id: {chessMatch.Id}");
         }
@@ -119,5 +100,25 @@ namespace ArcadesBot
                 session.SaveChanges();
             }
         }
+        #endregion
+
+        #region Private Methods
+        private List<ChessMatchStatsModel> GetStats()
+        {
+            using (var session = Store.OpenSession())
+                return session.Query<ChessMatchStatsModel>().ToList();
+        }
+        private List<ChessMatchModel> GetMatches()
+        {
+            using (var session = Store.OpenSession())
+                return session.Query<ChessMatchModel>().ToList();
+        }
+        private List<ChessChallengeModel> GetChallenges()
+        {
+            using (var session = Store.OpenSession())
+                return session.Query<ChessChallengeModel>().ToList();
+        }
+
+        #endregion
     }
 }

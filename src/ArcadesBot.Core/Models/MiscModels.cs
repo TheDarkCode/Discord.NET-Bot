@@ -4,20 +4,6 @@ using System.Collections.Generic;
 
 namespace ArcadesBot
 {
-    public enum Scope
-    {
-        User,
-        Guild,
-        Global
-    }
-    public class MessageWrapper
-    {
-        public string Content { get; set; }
-        public ulong AuthorId { get; set; }
-        public ulong ChannelId { get; set; }
-        public ulong MessageId { get; set; }
-        public DateTime DateTime { get; set; }
-    }
     public class UserProfile
     {
         public bool IsBlacklisted { get; set; }

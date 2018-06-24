@@ -27,20 +27,13 @@ namespace ArcadesBot
         public UserProfile GetProfile(ulong guildId, ulong userId)
         {
             var guild = GuildHandler.GetGuild(Client.GetGuild(guildId).Id);
-            if (!guild.Profiles.ContainsKey(userId))
-            {
-                guild.Profiles.Add(userId, new UserProfile());
-                GuildHandler.Update(guild);
+            if (guild.Profiles.ContainsKey(userId))
                 return guild.Profiles[userId];
-            }
+            guild.Profiles.Add(userId, new UserProfile());
+            GuildHandler.Update(guild);
             return guild.Profiles[userId];
         }
-        /// <param name="guildId">The Guild's ID</param>
-        /// <param name="channelId">The Channel's ID</param>
-        /// <returns>
-        /// true = Added
-        /// false = Removed
-        /// </returns>
+
         public bool ToggleBlackList(GuildModel guild, ulong channelId)
         {
             if (!guild.BlackListedChannels.Contains(channelId))
@@ -49,12 +42,9 @@ namespace ArcadesBot
                 GuildHandler.Update(guild);
                 return true;
             }
-            else
-            {
-                guild.BlackListedChannels.Remove(channelId);
-                GuildHandler.Update(guild);
-                return false;
-            }
+            guild.BlackListedChannels.Remove(channelId);
+            GuildHandler.Update(guild);
+            return false;
             
         }
 
@@ -74,9 +64,7 @@ namespace ArcadesBot
             if (getChannel != null)
                 return (true, id);
             var findChannel = guild.TextChannels.FirstOrDefault(x => x.Name == channel.ToLower());
-            if (findChannel != null)
-                return (true, findChannel.Id);
-            return (false, 0);
+            return findChannel != null ? (true, findChannel.Id) : ((bool, ulong)) (false, 0);
         }
 
         public (bool, ulong) GetRoleId(SocketGuild guild, string role)
@@ -93,14 +81,12 @@ namespace ArcadesBot
             return (false, 0);
         }
 
-        public (bool, string) ListCheck<T>(List<T> collection, object value, string objectName, string collectionName)
+        public (bool Added, string Message) ListCheck<T>(List<T> collection, object value, string objectName, string collectionName)
         {
-            var check = collection.Contains((T)value);
-
             if (collection.Contains((T)value))
-                return (false, $"`{objectName}` already exists in {collectionName}.");
+                return (false, $"{objectName} already exists in {collectionName}.");
             if (collection.Count == collection.Capacity)
-                return (false, $"Reached max number of entries");
+                return (false, "Reached max number of entries");
 
             return (true, $"`{objectName}` has been added to {collectionName}");
         }
@@ -109,7 +95,7 @@ namespace ArcadesBot
         {
             var guildSocket = guild as SocketGuild;
             var highestRole = guildSocket.CurrentUser.Roles.OrderByDescending(x => x.Position).FirstOrDefault().Position;
-            return (user as SocketGuildUser).Roles.Any(x => x.Position > highestRole) ? true : false;
+            return (user as SocketGuildUser).Roles.Any(x => x.Position > highestRole);
         }
     }
 }
