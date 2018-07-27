@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace ArcadesBot
@@ -17,8 +16,6 @@ namespace ArcadesBot
         private readonly GuildHelper _guildhelper;
         private readonly GuildHandler _guildhandler;
         private readonly WebhookService _webhookservice;
-        private readonly ConfigHandler _confighandler;
-        private CancellationTokenSource _cancellationToken;
         private Random _random;
 
         //private readonly IChessService _chessService;
@@ -33,11 +30,7 @@ namespace ArcadesBot
             _guildhelper = _provider.GetService<GuildHelper>();
             _guildhandler = _provider.GetService<GuildHandler>();
             _webhookservice = _provider.GetService<WebhookService>();
-            _confighandler = _provider.GetService<ConfigHandler>();
-            _cancellationToken = new CancellationTokenSource();
             _random = _provider.GetService<Random>();
-            //_chessService = _provider.GetService<IChessService>();
-            //_manager = _provider.GetService<ConfigDatabase>();
         }
 
         public async Task StartAsync()
@@ -47,13 +40,11 @@ namespace ArcadesBot
             _discord.MessageReceived += CommandHandlerAsync;
             _discord.LeftGuild += LeftGuild;
             _discord.GuildAvailable += GuildAvailable;
-            _discord.Disconnected += Disconnected;
-            _discord.JoinedGuild += JoinedGuildAsync;
             _discord.UserJoined += UserJoinedAsync;
             _discord.UserLeft += UserLeftAsync;
 
             PrettyConsole.Log(LogSeverity.Info, "Commands", $"Loaded {_commands.Modules.Count()} modules with {_commands.Commands.Count()} commands");
-        } 
+        }   
 
 
         internal async Task ResultAsync(CustomCommandContext context, IResult result)
@@ -95,11 +86,6 @@ namespace ArcadesBot
                     if (!result.ErrorReason.Contains("SendMessages"))
                         await context.Channel.SendMessageAsync(result.ErrorReason);
                     break;
-                case CommandError.BadArgCount:
-                    var name = command.Module != null && command.Name.Contains("Async")
-                        ? command.Module.Group : $"{command.Module.Group ?? null} {command.Name}";
-                    await context.Channel.SendMessageAsync($"**Usage:** {context.Config.Prefix}{name} {StringHelper.ParametersInfo(command.Parameters)}");
-                    break;
             }
             _ = Task.Run(() => RecordCommand(command, context));
         }
@@ -115,20 +101,12 @@ namespace ArcadesBot
         }
         internal Task LeftGuild(SocketGuild guild) 
             => Task.Run(() 
-                => _guildhandler.RemoveGuild(guild.Id, guild.Name));
+                => _guildhandler.RemoveGuild(guild.Id));
 
         internal Task GuildAvailable(SocketGuild guild) 
             => Task.Run(() 
-                => _guildhandler.AddGuild(guild.Id, guild.Name));
-        internal Task Disconnected(Exception error)
-        {
-            _ = Task.Delay(TimeSpan.FromSeconds(5), _cancellationToken.Token).ContinueWith(async _ =>
-            {
-                PrettyConsole.Log(LogSeverity.Info, "Connection Manager", $"Checking connection state...");
-                await CheckStateAsync();
-            });
-            return Task.CompletedTask;
-        }
+                => _guildhandler.AddGuild(guild.Id));
+
         internal async Task CheckStateAsync()
         {
             if (_discord.ConnectionState == ConnectionState.Connected)
@@ -150,15 +128,8 @@ namespace ArcadesBot
         }
         internal Task Connected()
         {
-            _cancellationToken.Cancel();
-            _cancellationToken = new CancellationTokenSource();
             PrettyConsole.Log(LogSeverity.Info, "Connected", "Connected to Discord.");
             return Task.CompletedTask;
-        }
-        internal async Task JoinedGuildAsync(SocketGuild guild)
-        {
-            _guildhandler.AddGuild(guild.Id, guild.Name);
-            await guild.DefaultChannel.SendMessageAsync(_confighandler.Config.JoinMessage ?? "Thank you for inviting me to your server!");
         }
 
         internal async Task UserLeftAsync(SocketGuildUser user)

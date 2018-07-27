@@ -12,35 +12,51 @@ namespace ArcadesBot
     public class ChessHelper
     {
         public ChessHelper(ChessHandler chessHandler) 
-            => ChessHandler = chessHandler;
+            => _chessHandler = chessHandler;
 
-        private ChessHandler ChessHandler { get; }
+        private ChessHandler _chessHandler { get; }
 
         public List<ChessMatchStatsModel> Stats 
-            => ChessHandler.Stats;
+            => _chessHandler.Stats;
 
         public List<ChessMatchStatsModel> GetStatsFromUser(ulong userId, ulong guildId)
             => Stats.Where(x => x.Participants.Contains(userId) && x.GuildId == guildId).ToList();
 
-        public ChessChallengeModel GetChallenge(ulong guildId, ulong channelId, ulong invokerId)
-            =>  ChessHandler.Challenges.Where(x => x.GuildId == guildId && x.ChannelId == channelId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId)).OrderByDescending(x => x.TimeoutDate).FirstOrDefault();
+        public ChessChallengeModel GetChallenge(ulong guildId, ulong channelId, ulong invokerId, bool overRide = false)
+        {
+            if (overRide)
+                return _chessHandler.Challenges.Where(x => x.GuildId == guildId && x.ChannelId == channelId && (x.ChallengeeId == invokerId)).OrderByDescending(x => x.TimeoutDate).FirstOrDefault();
+            else
+                return _chessHandler.Challenges.Where(x => x.GuildId == guildId && x.ChannelId == channelId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId)).OrderByDescending(x => x.TimeoutDate).FirstOrDefault();
+        }
+            
 
         public bool CheckPlayerInMatch(ulong guildId, ulong invokerId)
-            =>  ChessHandler.Matches.Any(x => x.GuildId == guildId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId) && x.Winner == 1);
+            =>  _chessHandler.Matches.Any(x => x.GuildId == guildId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId) && x.Winner == 1);
 
         public ChessMatchModel GetMatch(ulong guildId, ulong channelId, ulong invokerId)
-            =>  ChessHandler.Matches.FirstOrDefault(x => x.GuildId == guildId && x.ChannelId == channelId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId) && x.Winner == 1);
+            =>  _chessHandler.Matches.FirstOrDefault(x => x.GuildId == guildId && x.ChannelId == channelId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId) && x.Winner == 1);
 
         public ChessMatchModel GetMatchByStatId(string id)
-            =>  ChessHandler.Matches.FirstOrDefault(x => x.IdOfStat == id);
+            =>  _chessHandler.Matches.FirstOrDefault(x => x.IdOfStat == id);
 
 
         public ChessChallengeModel GetChallenge(string id)
-            => ChessHandler.Challenges.FirstOrDefault(x => x.Id == id);
+            => _chessHandler.Challenges.FirstOrDefault(x => x.Id == id);
 
         public ChessChallengeModel CreateChallenge(ulong guildId, ulong channelId, IUser challenger, IUser challengee)
         {
-            ChessHandler.AddChallenge(guildId, channelId, challenger.Id, challengee.Id, challenger.GetAvatarUrl(), challengee.GetAvatarUrl());
+            var challenge = new ChessChallengeModel
+            {
+                ChallengerId = challenger.Id,
+                ChallengeeId = challengee.Id,
+                ChannelId = channelId,
+                GuildId = guildId,
+                Accepted = false,
+                DateCreated = DateTime.Now,
+                TimeoutDate = DateTime.Now.AddMinutes(1)
+            };
+            _chessHandler.AddChallenge(challenge);
             return GetChallenge(guildId, channelId, challenger.Id);
         }
 
@@ -50,7 +66,6 @@ namespace ArcadesBot
             switch (matchStatus.Status)
             {
                 case Cause.Checkmate:
-                    // ReSharper disable once PossibleInvalidOperationException
                     match.Winner = (ulong) matchStatus.WinnerId;
                     match.EndBy = Cause.Checkmate;
                     break;
@@ -60,14 +75,14 @@ namespace ArcadesBot
                     break;
             }
 
-            ChessHandler.UpdateMatch(match);
+            _chessHandler.UpdateMatch(match);
         }
 
         public ChessMatchModel AcceptChallenge(ChessChallengeModel challenge, string blackUrl, string whiteUrl)
         {
             challenge.Accepted = true;
-            ChessHandler.UpdateChallenge(challenge);
-            ChessHandler.AddMatch(challenge.GuildId, challenge.ChannelId, challenge.ChallengerId, challenge.ChallengeeId, whiteUrl, blackUrl);
+            _chessHandler.UpdateChallenge(challenge);
+            _chessHandler.AddMatch(challenge.GuildId, challenge.ChannelId, challenge.ChallengerId, challenge.ChallengeeId, whiteUrl, blackUrl);
             return GetMatch(challenge.GuildId, challenge.ChannelId, challenge.ChallengerId);
         }
 
@@ -80,7 +95,7 @@ namespace ArcadesBot
                 : chessMatch.ChallengeeId;
             chessMatch.EndBy = Cause.Resign;
 
-            ChessHandler.UpdateMatch(chessMatch);
+            _chessHandler.UpdateMatch(chessMatch);
             return chessMatch.Winner;
         }
     }

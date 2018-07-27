@@ -7,7 +7,7 @@ namespace ArcadesBot
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static void Main()
             => new Program().StartAsync().GetAwaiter().GetResult();
 
         private readonly Startup _startup = new Startup();
@@ -18,16 +18,17 @@ namespace ArcadesBot
             PrettyConsole.NewLine();
 
             var services = await _startup.ConfigureServices();
-            services.GetRequiredService<ConfigHandler>().ConfigCheck();
+
+            await services.GetService<SchedulerService>().Initialize();
+
             var manager = services.GetService<CommandManager>();
             await manager.StartAsync();
-
+            var databaseHandler = services.GetRequiredService<DatabaseHandler>();
             var discord = services.GetService<DiscordSocketClient>();
-            var config = services.GetService<ConfigHandler>();
-            await discord.LoginAsync(TokenType.Bot, config.Config.Token);
+            await discord.LoginAsync(TokenType.Bot, databaseHandler.Config.ApiKeys["Discord"]);
             await discord.StartAsync();
 
-            await services.GetRequiredService<DatabaseHandler>().DatabaseCheck();
+            
             await Task.Delay(-1);
         }
     }

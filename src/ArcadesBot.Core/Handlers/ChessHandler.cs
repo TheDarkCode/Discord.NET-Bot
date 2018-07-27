@@ -8,18 +8,21 @@ namespace ArcadesBot
 {
     public class ChessHandler
     {
-        public ChessHandler(IDocumentStore store, ChessStatsHandler stats)
+        public ChessHandler(DatabaseHandler databaseHandler, ChessStatsHandler stats)
         {
-            Store = store;
+            Database = databaseHandler;
             StatsHandler = stats;
         }
-        private IDocumentStore Store { get; }
+        private DatabaseHandler Database { get; }
         private ChessStatsHandler StatsHandler { get; }
 
 
-        public List<ChessMatchModel> Matches => GetMatches();
-        public List<ChessChallengeModel> Challenges => GetChallenges();
-        public List<ChessMatchStatsModel> Stats => GetStats();
+        public List<ChessMatchModel> Matches 
+            => Database.Query<ChessMatchModel>();
+        public List<ChessChallengeModel> Challenges 
+            => Database.Query<ChessChallengeModel>();
+        public List<ChessMatchStatsModel> Stats 
+            => Database.Query<ChessMatchStatsModel>();
 
         #region Public Methods
         public void CompleteMatch(ref ChessMatchModel chessMatch)
@@ -31,25 +34,17 @@ namespace ArcadesBot
 
         public void AddMatch(ulong guildId, ulong channelId, ulong challenger, ulong challengee, string whiteAvatarUrl, string blackAvatarUrl)
         {
-            var id = Guid.NewGuid();
-            using (var session = Store.OpenSession())
+            var id = Guid.NewGuid().ToString();
+            Database.Create<ChessMatchModel>(ref id, new ChessMatchModel
             {
-                while (session.Advanced.Exists($"{id}"))
-                    id = Guid.NewGuid();
-                session.Store(new ChessMatchModel
-                {
-                    Id = $"{id}",
-                    ChallengerId = challenger,
-                    ChallengeeId = challengee,
-                    ChannelId = channelId,
-                    GuildId = guildId,
-                    WhiteAvatarUrl = whiteAvatarUrl,
-                    BlackAvatarUrl = blackAvatarUrl,
-                    HistoryList = new List<ChessMoveModel>()
-                });
-                session.SaveChanges();
-            }
-            PrettyConsole.Log(LogSeverity.Info, "Add ChessMatch",  $"Added Chess Match With Id: {id}");
+                ChallengerId = challenger,
+                ChallengeeId = challengee,
+                ChannelId = channelId,
+                GuildId = guildId,
+                WhiteAvatarUrl = whiteAvatarUrl,
+                BlackAvatarUrl = blackAvatarUrl,
+                HistoryList = new List<ChessMoveModel>()
+            });
         }
 
         public void UpdateMatch(ChessMatchModel chessMatch)
@@ -60,65 +55,27 @@ namespace ArcadesBot
             {
                 CompleteMatch(ref chessMatch);
             }
-            using (var session = Store.OpenSession())
-            {
-                session.Store(chessMatch, $"{chessMatch.Id}");
-                session.SaveChanges();
-            }
+            Database.Update<ChessMatchModel>($"{chessMatch.Id}", chessMatch);
         }
 
-        public void AddChallenge(ulong guildId, ulong channelId, ulong challenger, ulong challengee, string whiteAvatarUrl, string blackAvatarUrl)
+        public void AddChallenge(ChessChallengeModel challenge)
         {
-            var id = Guid.NewGuid();
-            using (var session = Store.OpenSession())
-            {
-                while (session.Advanced.Exists($"{id}"))
-                    id = Guid.NewGuid();
-                session.Store(new ChessChallengeModel
-                {
-                    Id = $"{id}",
-                    ChallengerId = challenger,
-                    ChallengeeId = challengee,
-                    ChannelId = channelId,
-                    GuildId = guildId,
-                    Accepted = false,
-                    DateCreated = DateTime.Now,
-                    TimeoutDate = DateTime.Now.AddMinutes(1)
-                });
-                session.SaveChanges();
-            }
-            PrettyConsole.Log(LogSeverity.Info, "Add ChessChallenge", $"Added Chess Challenge With Id: {id}");
+            var id = Guid.NewGuid().ToString();
+            Database.Create<ChessChallengeModel>(ref id, challenge);
         }
 
         public void UpdateChallenge(ChessChallengeModel chessChallenge)
         {
             if (chessChallenge == null)
                 return;
-            using (var session = Store.OpenSession())
-            {
-                session.Store(chessChallenge, $"{chessChallenge.Id}");
-                session.SaveChanges();
-            }
+            Database.Update<ChessChallengeModel>($"{chessChallenge.Id}", chessChallenge);
         }
-        #endregion
-
-        #region Private Methods
-        private List<ChessMatchStatsModel> GetStats()
+        public void RemoveChallenge(ChessChallengeModel chessChallenge)
         {
-            using (var session = Store.OpenSession())
-                return session.Query<ChessMatchStatsModel>().ToList();
+            if (chessChallenge == null)
+                return;
+            Database.Delete<ChessChallengeModel>($"{chessChallenge.Id}");
         }
-        private List<ChessMatchModel> GetMatches()
-        {
-            using (var session = Store.OpenSession())
-                return session.Query<ChessMatchModel>().ToList();
-        }
-        private List<ChessChallengeModel> GetChallenges()
-        {
-            using (var session = Store.OpenSession())
-                return session.Query<ChessChallengeModel>().ToList();
-        }
-
         #endregion
     }
 }

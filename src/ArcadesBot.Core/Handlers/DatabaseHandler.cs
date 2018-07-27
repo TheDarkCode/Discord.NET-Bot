@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
@@ -8,25 +9,24 @@ using Raven.Client.Documents;
 using Raven.Client.ServerWide;
 using Discord;
 using Raven.Client.ServerWide.Operations;
-using Raven.Client.Documents.Operations.Backups;
+using System.Reflection;
 
 namespace ArcadesBot
 {
     public class DatabaseHandler
     {
-        private IDocumentStore Store { get; }
-        private ConfigHandler Config { get; }
-        public DatabaseHandler(IDocumentStore store, ConfigHandler config)
-        {
-            Store = store;
-            Config = config;
-        }
+        private IDocumentStore Store { get; set; }
+        public DatabaseHandler() 
+            => Initialize();
+
+        public ConfigModel Config 
+            => Select<ConfigModel>("Config");
 
         public static DatabaseModel DbConfig
         {
             get
             {
-                var dbConfigPath = $"{Directory.GetCurrentDirectory()}/DBConfig.json";
+                var dbConfigPath = $"{Directory.GetCurrentDirectory()}/config/DBConfig.json";
                 if (File.Exists(dbConfigPath))
                     return JsonConvert.DeserializeObject<DatabaseModel>(File.ReadAllText(dbConfigPath));
 
@@ -34,28 +34,111 @@ namespace ArcadesBot
                 return JsonConvert.DeserializeObject<DatabaseModel>(File.ReadAllText(dbConfigPath));
             }
         }
-
-        public async Task DatabaseCheck()
+        public void Initialize()
         {
+            var DBName = DbConfig.DatabaseName; 
             if (Process.GetProcesses().FirstOrDefault(x => x.ProcessName == "Raven.Server") == null)
+                PrettyConsole.Log(LogSeverity.Error, "Database", "Please make sure RavenDB is running.");
+
+            Store = new Lazy<IDocumentStore>(
+                    () => new DocumentStore { Database = DbConfig.DatabaseName, Urls = new[] { DbConfig.DatabaseUrl } }.Initialize(),
+                    true).Value;
+            if (Store == null)
+                PrettyConsole.Log(LogSeverity.Error, "Database", "Failed to build document store.");
+
+
+
+            if (Store.Maintenance.Server.Send(new GetDatabaseNamesOperation(0, 5)).All(x => x != DBName))
+                Store.Maintenance.Server.Send(new CreateDatabaseOperation(new DatabaseRecord(DBName)));
+
+            Store.AggressivelyCacheFor(TimeSpan.FromMinutes(30));
+
+
+
+            using (var session = Store.OpenSession())
             {
-                PrettyConsole.Log(LogSeverity.Critical, "Database", "Raven Server isn't running. Please make sure RavenDB is running.\nExiting ...");
-                await Task.Delay(5000);
-                Environment.Exit(Environment.ExitCode);
+                if (session.Advanced.Exists("Config"))
+                    return;
+                PrettyConsole.Log(LogSeverity.Info, "Arcade's Bot", "Enter Bot's Token:");
+                var token = Console.ReadLine();
+                PrettyConsole.Log(LogSeverity.Info, "Arcade's Bot", "Enter Bot's Prefix:");
+                var prefix = Console.ReadLine();
+                var model = new ConfigModel
+                {
+                    Prefix = prefix,
+                    Blacklist = new List<ulong>(),
+                    Namespaces = new List<string>(),
+                    ApiKeys = new Dictionary<string, string>{ { "Giphy", "dc6zaTOxFJmzC" }, { "Google", "" }, { "Discord", token }, { "Imgur", "" }, { "Cleverbot", "" } }
+                };
+                var id = "Config";
+                Create<ConfigModel>(ref id, model);
+            }
+        }
+
+        public T Create<T>(ref string id, object data)
+        {
+            var returnValue = (T)data;
+            using (var session = Store.OpenSession(Store.Database))
+            {
+                if (session.Advanced.Exists($"{id}") && ulong.TryParse(id, out _))
+                {
+                    return returnValue;
+                }
+                while (session.Advanced.Exists($"{id}") )
+                    id = Guid.NewGuid().ToString();
+                session.Store((T)data, $"{id}");
+                PrettyConsole.Log(LogSeverity.Info, "Database", $"Added {typeof(T).Name} with {id} id.");
+
+                session.SaveChanges();
+                session.Dispose();
             }
 
-            await DatabaseSetupAsync().ConfigureAwait(false);
-            Config.ConfigCheck();
+            return returnValue;
         }
 
-        private async Task DatabaseSetupAsync()
+        public T Select<T>(object id = null)
         {
-            if (Store.Maintenance.Server.Send(new GetDatabaseNamesOperation(0, 5)).Any(x => x == DbConfig.DatabaseName))
-                return;
+            T returnValue;
+            using (var session = Store.OpenSession(Store.Database))
+            {
+                returnValue = session.Load<T>($"{id}");
 
-            PrettyConsole.Log(LogSeverity.Warning, "Database", $"Database {DbConfig.DatabaseName} doesn't exist!");
-            await Store.Maintenance.Server.SendAsync(new CreateDatabaseOperation(new DatabaseRecord(DbConfig.DatabaseName)));
-            PrettyConsole.Log(LogSeverity.Info, "Database", $"Created Database{DbConfig.DatabaseName}.");
+                session.SaveChanges();
+                session.Dispose();
+            }
+
+            return returnValue;
         }
+        public List<T> Query<T>()
+        {
+            List<T> returnValue;
+            using (var session = Store.OpenSession(Store.Database))
+            {
+                returnValue = session.Query<T>().ToList();
+            }
+
+            return returnValue;
+        }
+        public void Delete<T>(object id)
+        {
+            using (var session = Store.OpenSession(Store.Database))
+            {
+                PrettyConsole.Log(LogSeverity.Info, "Database", $"Removed {typeof(T).Name} with {id} id.");
+                session.Delete(session.Load<T>($"{id}"));
+
+                session.SaveChanges();
+                session.Dispose();
+            }
+        }
+        public void Update<T>(object id, object data)
+        {
+            using (var session = Store.OpenSession())
+            {
+                session.Store((T)data, $"{id}");
+                session.SaveChanges();
+            }
+            PrettyConsole.Log(LogSeverity.Info, "Database", $"Updated {nameof(T)} with {id} id.");
+        }
+
     }
 }

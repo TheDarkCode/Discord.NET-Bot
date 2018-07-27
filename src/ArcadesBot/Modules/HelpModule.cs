@@ -27,6 +27,7 @@ namespace ArcadesBot.Modules
             var modules = _commands.Modules.Where(x => !string.IsNullOrWhiteSpace(x.Summary));
 
             var embed = new EmbedBuilder()
+                .WithInfoColor()
                 .WithFooter(x => x.Text = $"Type `{prefix}help <module>` for more information");
 
             foreach (var module in modules)
@@ -48,9 +49,7 @@ namespace ArcadesBot.Modules
                 embed.AddField(module.Name, module.Summary);
             }
 
-            embed.WithColor(EmbedColors.GetSuccessColor());
-
-            await ReplyEmbedAsync(embed: embed.Build());
+            await ReplyEmbedAsync(embed: embed);
         }
 
         [Command]
@@ -88,6 +87,7 @@ namespace ArcadesBot.Modules
             }
 
             var embed = new EmbedBuilder()
+                .WithInfoColor()
                 .WithFooter(x => x.Text = $"Type `{prefix}help {prefix}<command>` for more information");
 
             foreach (var command in commands)
@@ -97,9 +97,7 @@ namespace ArcadesBot.Modules
                     embed.AddField(prefix + command.Aliases.First(), command.Summary);
             }
 
-            embed.WithColor(EmbedColors.GetSuccessColor());
-
-            await ReplyEmbedAsync(embed: embed.Build());
+            await ReplyEmbedAsync(embed: embed);
         }
 
         private async Task HelpAsync(string moduleName, string commandName)
@@ -123,7 +121,8 @@ namespace ArcadesBot.Modules
             }
 
             var command = commands.Where(x => x.Aliases.Contains(alias));
-            var embed = new EmbedBuilder();
+            var embed = new EmbedBuilder()
+                .WithInfoColor();
 
             var aliases = new List<string>();
             foreach (var overload in command)
@@ -137,7 +136,7 @@ namespace ArcadesBot.Modules
                     foreach (var parameter in overload.Parameters)
                     {
                         var p = parameter.Name;
-                        p = StringHelper.FirstCharToUpper(p);
+                        p.FirstCharToUpper();
                         if (parameter.Summary != null)
                             fields.Add(new EmbedFieldBuilder().WithName(p).WithValue(parameter.Summary));
                         if (parameter.IsRemainder)
@@ -158,9 +157,7 @@ namespace ArcadesBot.Modules
 
             embed.WithFooter(x => x.Text = $"Aliases: {string.Join(", ", aliases)}");
 
-            embed.WithColor(EmbedColors.GetSuccessColor());
-
-            await ReplyEmbedAsync(embed: embed.Build());
+            await ReplyEmbedAsync(embed: embed);
         }
         private string GetPrefix(CustomCommandContext context)
             => context.Server.Prefix ?? null;

@@ -35,8 +35,7 @@ namespace ArcadesBot
                 $"+ Mute Role           : @{StringHelper.CheckRole(Context.Guild as SocketGuild, Context.Server.Mod.MuteRole)}\n" +
                 $"+ Blacklisted Users   : {Context.Server.Profiles.Where(x => x.Value.IsBlacklisted).Count()}\n" +
                 $"+ Blacklisted Channels: {Context.Server.BlackListedChannels.Count}\n" +
-                $"```", false)
-               .Build();
+                $"```", false);
             return ReplyEmbedAsync(embed: embed);
         }
 

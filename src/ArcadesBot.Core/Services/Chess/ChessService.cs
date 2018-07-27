@@ -1,6 +1,5 @@
 ﻿using ChessDotNet;
 using Discord;
-using Discord.WebSocket;
 using SixLabors.ImageSharp;
 using SixLabors.Primitives;
 using System;
@@ -83,7 +82,7 @@ namespace ArcadesBot
 
         public ChessMatchModel AcceptChallenge(CustomCommandContext context, IUser player)
         {
-            var challenge = _chessHelper.GetChallenge(context.Guild.Id, context.Channel.Id, player.Id);
+            var challenge = _chessHelper.GetChallenge(context.Guild.Id, context.Channel.Id, player.Id, true);
 
             if (challenge == null)
                 throw new ChessException("No challenge exists for you to accept.");
@@ -414,10 +413,11 @@ namespace ArcadesBot
         private async void RemoveChallenge(ChessChallengeModel challenge, Action<ChessChallengeModel> onTimeout)
         {
             while (challenge.TimeoutDate > DateTime.Now)
-                await Task.Delay(1000);
+                await Task.Delay(250);
             challenge = _chessHelper.GetChallenge(challenge.Id);
             if (challenge.Accepted)
                 return;
+               
             onTimeout?.Invoke(challenge);
         }
         #endregion

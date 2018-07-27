@@ -8,32 +8,24 @@ namespace ArcadesBot
 {
     public class ChessStatsHandler
     {
-        private IDocumentStore Store { get; }
-        public ChessStatsHandler(IDocumentStore store)
-            => Store = store;
+        private DatabaseHandler Database { get; }
+        public ChessStatsHandler(DatabaseHandler database)
+            => Database = database;
 
         public string AddStat(ChessMatchModel chessMatch)
         {
-            var id = Guid.NewGuid();
-            using (var session = Store.OpenSession())
+            var id = $"{Guid.NewGuid()}";
+            return Database.Create<ChessMatchStatsModel>(ref id, new ChessMatchStatsModel
             {
-                while (session.Advanced.Exists($"{id}"))
-                    id = Guid.NewGuid();
-                session.Store(new ChessMatchStatsModel
-                {
-                    Id = $"{id}",
-                    GuildId = chessMatch.GuildId,
-                    Participants =  new [] { chessMatch.ChallengerId, chessMatch.ChallengeeId },
-                    CreatedBy = chessMatch.ChallengerId,
-                    Winner = chessMatch.Winner,
-                    EndBy = chessMatch.EndBy,
-                    EndDate = DateTime.Now,
-                    MoveCount = (ulong)chessMatch.HistoryList.Count
-                });
-                session.SaveChanges();
-            }
-            PrettyConsole.Log(LogSeverity.Info, "Add ChessMatch Stat", $"Added Chess Match With Id: {id}");
-            return $"{id}";
+                Id = id,
+                GuildId = chessMatch.GuildId,
+                Participants = new[] { chessMatch.ChallengerId, chessMatch.ChallengeeId },
+                CreatedBy = chessMatch.ChallengerId,
+                Winner = chessMatch.Winner,
+                EndBy = chessMatch.EndBy,
+                EndDate = DateTime.Now,
+                MoveCount = (ulong)chessMatch.HistoryList.Count
+            }).Id;
         }
     }
 }

@@ -5,47 +5,21 @@ namespace ArcadesBot
 {
     public class GuildHandler
     {
-        IDocumentStore Store { get; }
-        public GuildHandler(IDocumentStore store) 
+        DatabaseHandler Store { get; }
+        public GuildHandler(DatabaseHandler store) 
             => Store = store;
 
-        public GuildModel GetGuild(ulong id)
-        {
-            using (var session = Store.OpenSession())
-                return session.Load<GuildModel>($"{id}");
-        }
+        public GuildModel GetGuild(ulong id) 
+            => Store.Select<GuildModel>(id: $"{id}");
 
-        public void RemoveGuild(ulong id, string name = null)
-        {
-            using (var session = Store.OpenSession())
-                session.Delete($"{id}");
-            PrettyConsole.Log(LogSeverity.Info, "RemoveGuild", string.IsNullOrWhiteSpace(name) ? $"Removed Server With Id: {id}" : $"Removed Config For {name}");
-        }
+        public void RemoveGuild(ulong id) 
+            => Store.Delete<GuildModel>(id: id);
 
-        public void AddGuild(ulong id, string name = null)
+        public void AddGuild(ulong id)
         {
-            using (var session = Store.OpenSession())
-            {
-                if (session.Advanced.Exists($"{id}")) return;
-                session.Store(new GuildModel
-                {
-                    Id = $"{id}",
-                    Prefix = "%"
-                });
-                session.SaveChanges();
-            }
-            PrettyConsole.Log(LogSeverity.Info, "AddGuild", string.IsNullOrWhiteSpace(name) ? $"Added Server With Id: {id}" : $"Created Config For {name}");
+            string refId = $"{id}";
+            Store.Create<GuildModel>(ref refId, new GuildModel { Id = $"{id}", Prefix = "%" });
         }
-
-        public void Update(GuildModel server)
-        {
-            if (server == null)
-                return;
-            using (var session = Store.OpenSession())
-            {
-                session.Store(server, server.Id);
-                session.SaveChanges();
-            }
-        }
+            
     }
 }

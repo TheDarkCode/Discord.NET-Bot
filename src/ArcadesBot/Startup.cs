@@ -18,16 +18,11 @@ namespace ArcadesBot
         public async Task<IServiceProvider> ConfigureServices()
         {
             var services = new ServiceCollection()
-                .AddSingleton(new DocumentStore
-                {
-                    Certificate = DatabaseHandler.DbConfig.Certificate,
-                    Database = DatabaseHandler.DbConfig.DatabaseName,
-                    Urls = new[] { DatabaseHandler.DbConfig.DatabaseUrl }
-                }.Initialize())
+                .AddSingleton<DatabaseHandler>()
                 .AddSingleton<ChessHandler>()
                 .AddSingleton<GuildHandler>()
                 .AddSingleton<ChessStatsHandler>()
-                .AddSingleton<ConfigHandler>()
+                .AddSingleton<SchedulerService>()
                 .AddSingleton<CommandManager>()
                 .AddSingleton<RoslynManager>()
                 .AddSingleton<Random>()
@@ -56,7 +51,7 @@ namespace ArcadesBot
             var discord = new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Verbose,
-                MessageCacheSize = 1000
+                MessageCacheSize = 1000,
             });
 
             var commands = new CommandService(new CommandServiceConfig
@@ -65,7 +60,7 @@ namespace ArcadesBot
                 DefaultRunMode = RunMode.Async,
                 ThrowOnError = false
             });
-
+            
             discord.Log += OnLogAsync;
             commands.Log += OnLogAsync;
 
@@ -78,16 +73,13 @@ namespace ArcadesBot
         {
             var provider = new DefaultServiceProviderFactory().CreateServiceProvider(services);
 
-            var config = provider.GetService<ConfigHandler>();
-            ConfigModel model;
-            if (config.Config == null)
-                model = config.ConfigCheck();
-            else
-                model = config.Config;
+            var databaseHandler = provider.GetService<DatabaseHandler>();
+            if (databaseHandler.Config == null)
+                databaseHandler.Initialize();
 
             var youtube = new YouTubeService(new BaseClientService.Initializer()
             {
-                ApiKey = config.Config.ApiKeys["Google"],
+                ApiKey = databaseHandler.Config.ApiKeys["Google"],
                 MaxUrlLength = 256
             });
             services.AddSingleton(youtube);
@@ -95,6 +87,10 @@ namespace ArcadesBot
         }
 
         private Task OnLogAsync(LogMessage msg)
-            => PrettyConsole.LogAsync(msg.Severity, msg.Source, msg.Exception?.ToString() ?? msg.Message);
+        {
+            PrettyConsole.Log(msg.Severity, msg.Source, msg.Exception?.ToString() ?? msg.Message);
+            return Task.CompletedTask;
+        }
+            
     }
 }

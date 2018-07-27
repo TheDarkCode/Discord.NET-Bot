@@ -22,11 +22,10 @@ namespace ArcadesBot
             Random = provider.GetRequiredService<Random>();
             HttpClient = provider.GetRequiredService<HttpClient>();
             GuildHelper = provider.GetRequiredService<GuildHelper>();
-            ConfigHandler = provider.GetRequiredService<ConfigHandler>();
             WebhookService = provider.GetRequiredService<WebhookService>();
+            Database = provider.GetRequiredService<DatabaseHandler>();
             GuildHandler = provider.GetRequiredService<GuildHandler>();
-            Config = provider.GetRequiredService<ConfigHandler>().Config;
-            Session = provider.GetRequiredService<IDocumentStore>().OpenSession();
+            Config = provider.GetRequiredService<DatabaseHandler>().Config;
             Server = provider.GetRequiredService<GuildHandler>().GetGuild(Guild.Id);
         }
 
@@ -36,13 +35,12 @@ namespace ArcadesBot
         public HttpClient HttpClient { get; }
         public GuildModel Server { get; }
         public ConfigModel Config { get; }
+        public DatabaseHandler Database { get; }
+        public GuildHandler GuildHandler { get; }
         public DiscordSocketClient Client { get; }
         public IUserMessage Message { get; }
         public GuildHelper GuildHelper { get; }
-        public ConfigHandler ConfigHandler { get; }
         public IMessageChannel Channel { get; }
-        public IDocumentSession Session { get; }
-        public GuildHandler GuildHandler { get; }
         public WebhookService WebhookService { get; }
 
         //ICommandContext

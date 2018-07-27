@@ -33,7 +33,7 @@ namespace ArcadesBot.Modules
                 .AddField("Uptime", GetUptime(), true)
                 .WithFooter(x => x.Text = GetLibrary());
 
-            await ReplyEmbedAsync(embed: builder.Build());
+            await ReplyEmbedAsync(embed: builder);
         }
 
         public string GetUptime()
