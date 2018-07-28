@@ -11,11 +11,9 @@ namespace ArcadesBot.Modules.Eval
     {
         private RoslynManager _roslyn { get; }
 
-        public EvalModule(IServiceProvider provider)
-        {
-            _roslyn = provider.GetService<RoslynManager>();
-        }
-        
+        public EvalModule(IServiceProvider provider) 
+            => _roslyn = provider.GetService<RoslynManager>();
+
         [Command(RunMode = RunMode.Async)]
         public async Task EvalAsync([Remainder]string code)
         {

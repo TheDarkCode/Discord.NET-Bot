@@ -13,7 +13,7 @@ namespace ArcadesBot
         public async Task<IUserMessage> ReplyEmbedAsync(string description = "", EmbedBuilder embed = null, DocumentType document = DocumentType.None)
         {
             if(embed == null)
-                embed = new EmbedBuilder().WithDescription(description);
+                embed = new EmbedBuilder().WithSuccessColor().WithDescription(description);
             return await ReplyAsync("", embed, document);
         }
         public async Task<IUserMessage> ReplyAsync(string message, EmbedBuilder embed = null, DocumentType document = DocumentType.None)

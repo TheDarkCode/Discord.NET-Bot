@@ -16,5 +16,6 @@ namespace ArcadesBot
         public WebhookWrapper JoinWebhook { get; set; } = new WebhookWrapper();
         public WebhookWrapper LeaveWebhook { get; set; } = new WebhookWrapper();
         public Dictionary<ulong, UserProfile> Profiles { get; set; } = new Dictionary<ulong, UserProfile>();
+        public List<TagModel> Tags { get; set; } = new List<TagModel>();
     }
 }

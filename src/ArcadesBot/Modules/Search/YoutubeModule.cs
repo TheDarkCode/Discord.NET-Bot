@@ -14,10 +14,9 @@ namespace ArcadesBot
     {
         private YouTubeService _youtube { get; }
 
-        public YoutubeModule(YouTubeService youtube)
-        {
-            _youtube = youtube;
-        }
+        public YoutubeModule(YouTubeService youtube) 
+            => _youtube = youtube;
+
         [Command("youtube"), Alias("yt")]
         [Summary("Search for a video matching the provided text")]
         public async Task SearchAsync([Remainder, Summary("The query you want to make to YouTube")]string query)

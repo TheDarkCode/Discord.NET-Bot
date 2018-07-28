@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using Discord;
 using Newtonsoft.Json;
-using System.Diagnostics;
-using System.Threading.Tasks;
 using Raven.Client.Documents;
 using Raven.Client.ServerWide;
-using Discord;
 using Raven.Client.ServerWide.Operations;
-using System.Reflection;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 
 namespace ArcadesBot
 {
@@ -137,7 +135,7 @@ namespace ArcadesBot
                 session.Store((T)data, $"{id}");
                 session.SaveChanges();
             }
-            PrettyConsole.Log(LogSeverity.Info, "Database", $"Updated {nameof(T)} with {id} id.");
+            PrettyConsole.Log(LogSeverity.Info, "Database", $"Updated {typeof(T).Name} with {id} id.");
         }
 
     }
