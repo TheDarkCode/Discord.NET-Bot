@@ -12,8 +12,9 @@ namespace ArcadesBot.Modules
     [Group("help"), Name("Help")]
     public class HelpModule : Base
     {
-        private readonly CommandService _commands;
-        private readonly IServiceProvider _provider;
+        private CommandService _commands { get; }
+        private IServiceProvider _provider { get; }
+
         public HelpModule(IServiceProvider provider)
         {
             _commands = provider.GetService<CommandService>();

@@ -12,7 +12,7 @@ namespace ArcadesBot.Modules
     [Summary("")]
     public class InfoModule : Base
     {
-        private readonly Process _process;
+        private Process _process { get; }
 
         public InfoModule() 
             => _process = Process.GetCurrentProcess();

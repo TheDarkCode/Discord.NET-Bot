@@ -15,7 +15,7 @@ namespace ArcadesBot
 {
     public class DatabaseHandler
     {
-        private IDocumentStore Store { get; set; }
+        private IDocumentStore _store { get; set; }
         public DatabaseHandler() 
             => Initialize();
 
@@ -40,22 +40,22 @@ namespace ArcadesBot
             if (Process.GetProcesses().FirstOrDefault(x => x.ProcessName == "Raven.Server") == null)
                 PrettyConsole.Log(LogSeverity.Error, "Database", "Please make sure RavenDB is running.");
 
-            Store = new Lazy<IDocumentStore>(
+            _store = new Lazy<IDocumentStore>(
                     () => new DocumentStore { Database = DbConfig.DatabaseName, Urls = new[] { DbConfig.DatabaseUrl } }.Initialize(),
                     true).Value;
-            if (Store == null)
+            if (_store == null)
                 PrettyConsole.Log(LogSeverity.Error, "Database", "Failed to build document store.");
 
 
 
-            if (Store.Maintenance.Server.Send(new GetDatabaseNamesOperation(0, 5)).All(x => x != DBName))
-                Store.Maintenance.Server.Send(new CreateDatabaseOperation(new DatabaseRecord(DBName)));
+            if (_store.Maintenance.Server.Send(new GetDatabaseNamesOperation(0, 5)).All(x => x != DBName))
+                _store.Maintenance.Server.Send(new CreateDatabaseOperation(new DatabaseRecord(DBName)));
 
-            Store.AggressivelyCacheFor(TimeSpan.FromMinutes(30));
+            _store.AggressivelyCacheFor(TimeSpan.FromMinutes(30));
 
 
 
-            using (var session = Store.OpenSession())
+            using (var session = _store.OpenSession())
             {
                 if (session.Advanced.Exists("Config"))
                     return;
@@ -78,7 +78,7 @@ namespace ArcadesBot
         public T Create<T>(ref string id, object data)
         {
             var returnValue = (T)data;
-            using (var session = Store.OpenSession(Store.Database))
+            using (var session = _store.OpenSession(_store.Database))
             {
                 if (session.Advanced.Exists($"{id}") && ulong.TryParse(id, out _))
                 {
@@ -99,7 +99,7 @@ namespace ArcadesBot
         public T Select<T>(object id = null)
         {
             T returnValue;
-            using (var session = Store.OpenSession(Store.Database))
+            using (var session = _store.OpenSession(_store.Database))
             {
                 returnValue = session.Load<T>($"{id}");
 
@@ -112,7 +112,7 @@ namespace ArcadesBot
         public List<T> Query<T>()
         {
             List<T> returnValue;
-            using (var session = Store.OpenSession(Store.Database))
+            using (var session = _store.OpenSession(_store.Database))
             {
                 returnValue = session.Query<T>().ToList();
             }
@@ -121,7 +121,7 @@ namespace ArcadesBot
         }
         public void Delete<T>(object id)
         {
-            using (var session = Store.OpenSession(Store.Database))
+            using (var session = _store.OpenSession(_store.Database))
             {
                 PrettyConsole.Log(LogSeverity.Info, "Database", $"Removed {typeof(T).Name} with {id} id.");
                 session.Delete(session.Load<T>($"{id}"));
@@ -132,7 +132,7 @@ namespace ArcadesBot
         }
         public void Update<T>(object id, object data)
         {
-            using (var session = Store.OpenSession())
+            using (var session = _store.OpenSession())
             {
                 session.Store((T)data, $"{id}");
                 session.SaveChanges();

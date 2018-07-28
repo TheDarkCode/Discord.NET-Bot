@@ -13,7 +13,7 @@ namespace ArcadesBot
 {
     public class RoslynManager
     {
-        private readonly IServiceProvider _provider;
+        private IServiceProvider _provider { get; }
 
         public RoslynManager(IServiceProvider provider) 
             => _provider = provider;
@@ -115,7 +115,7 @@ namespace ArcadesBot
 
     public class RoslynGlobals
     {
-        public readonly CustomCommandContext Context;
+        public CustomCommandContext Context { get; }
 
         public RoslynGlobals(IServiceProvider provider, CustomCommandContext context) 
             => Context = context;

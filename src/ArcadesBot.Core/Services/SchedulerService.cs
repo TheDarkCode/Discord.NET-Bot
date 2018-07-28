@@ -7,10 +7,10 @@ namespace ArcadesBot
 {
     public class SchedulerService
     {
-        private DatabaseHandler Database { get; }
+        private DatabaseHandler _database { get; }
 
         public SchedulerService(DatabaseHandler database) 
-            => Database = database;
+            => _database = database;
 
         public Task Initialize()
         {
@@ -20,10 +20,10 @@ namespace ArcadesBot
         }
         private Task DeleteExpiredChallenges()
         {
-            var challenges = Database.Query<ChessChallengeModel>().Where(x => x.Accepted == false && x.TimeoutDate.AddSeconds(20) < DateTime.Now);
+            var challenges = _database.Query<ChessChallengeModel>().Where(x => x.Accepted == false && x.TimeoutDate.AddSeconds(20) < DateTime.Now);
 
             foreach(var challenge in challenges)
-                Database.Delete<ChessChallengeModel>(challenge.Id);
+                _database.Delete<ChessChallengeModel>(challenge.Id);
 
             return Task.CompletedTask;
         }

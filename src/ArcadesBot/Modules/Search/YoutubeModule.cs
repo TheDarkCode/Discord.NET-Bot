@@ -12,7 +12,7 @@ namespace ArcadesBot
     [Summary("Search for things on youtube.")]
     public class YoutubeModule : ModuleBase<CustomCommandContext>
     {
-        private readonly YouTubeService _youtube;
+        private YouTubeService _youtube { get; }
 
         public YoutubeModule(YouTubeService youtube)
         {

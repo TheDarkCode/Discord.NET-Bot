@@ -10,29 +10,29 @@ namespace ArcadesBot
 {
     public class GuildHelper
     {
-        private GuildHandler GuildHandler { get; }
-        private DiscordSocketClient Client { get; }
-        private DatabaseHandler Database { get; }
+        private GuildHandler _guildHandler { get; }
+        private DiscordSocketClient _client { get; }
+        private DatabaseHandler _database { get; }
         public GuildHelper(GuildHandler guildHandler, DiscordSocketClient client, DatabaseHandler database)
         {
-            Client = client;
-            GuildHandler = guildHandler;
-            Database = database;
+            _client = client;
+            _guildHandler = guildHandler;
+            _database = database;
         }
 
         public IMessageChannel DefaultChannel(ulong guildId)
         {
-            var guild = Client.GetGuild(guildId);
+            var guild = _client.GetGuild(guildId);
             return guild.TextChannels.FirstOrDefault(x => x.Name.Contains("general") || x.Name.Contains("lobby") || x.Id == guild.Id) ?? guild.DefaultChannel;
         }
 
         public UserProfile GetProfile(ulong guildId, ulong userId)
         {
-            var guild = GuildHandler.GetGuild(guildId);
+            var guild = _guildHandler.GetGuild(guildId);
             if (guild.Profiles.ContainsKey(userId))
                 return guild.Profiles[userId];
             guild.Profiles.Add(userId, new UserProfile());
-            Database.Update<GuildModel>(guildId, guild);
+            _database.Update<GuildModel>(guildId, guild);
             return guild.Profiles[userId];
         }
 
@@ -41,20 +41,20 @@ namespace ArcadesBot
             if (!guild.BlackListedChannels.Contains(channelId))
             {
                 guild.BlackListedChannels.Add(channelId);
-                Database.Update<GuildModel>(guild.Id, guild);
+                _database.Update<GuildModel>(guild.Id, guild);
                 return true;
             }
             guild.BlackListedChannels.Remove(channelId);
-            Database.Update<GuildModel>(guild.Id, guild);
+            _database.Update<GuildModel>(guild.Id, guild);
             return false;
             
         }
 
         public void SaveProfile(ulong guildId, ulong userId, UserProfile profile)
         {
-            var data = GuildHandler.GetGuild(guildId);
+            var data = _guildHandler.GetGuild(guildId);
             data.Profiles[userId] = profile;
-            Database.Update<GuildModel>(data.Id, data);
+            _database.Update<GuildModel>(data.Id, data);
         }
 
         public (bool, ulong) GetChannelId(SocketGuild guild, string channel)

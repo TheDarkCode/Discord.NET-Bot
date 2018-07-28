@@ -8,14 +8,14 @@ namespace ArcadesBot
 {
     public class ChessStatsHandler
     {
-        private DatabaseHandler Database { get; }
+        private DatabaseHandler _database { get; }
         public ChessStatsHandler(DatabaseHandler database)
-            => Database = database;
+            => _database = database;
 
         public string AddStat(ChessMatchModel chessMatch)
         {
             var id = $"{Guid.NewGuid()}";
-            return Database.Create<ChessMatchStatsModel>(ref id, new ChessMatchStatsModel
+            return _database.Create<ChessMatchStatsModel>(ref id, new ChessMatchStatsModel
             {
                 Id = id,
                 GuildId = chessMatch.GuildId,

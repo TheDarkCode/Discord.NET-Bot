@@ -10,7 +10,7 @@ namespace ArcadesBot
         public static void Main()
             => new Program().StartAsync().GetAwaiter().GetResult();
 
-        private readonly Startup _startup = new Startup();
+        private Startup _startup { get; } = new Startup();
 
         public async Task StartAsync()
         {

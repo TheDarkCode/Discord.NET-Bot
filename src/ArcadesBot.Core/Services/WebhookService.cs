@@ -12,24 +12,24 @@ namespace ArcadesBot
 {
     public class WebhookService
     {
-        HttpClient Httpclient { get; }
-        GuildHandler Guildhandler { get; }
-        DiscordSocketClient Client { get; }
+        HttpClient _httpClient { get; }
+        GuildHandler _guildhandler { get; }
+        DiscordSocketClient _client { get; }
         private FileStream AvatarStream()
         {
             if (File.Exists("Avatar.jpg"))
                 return new FileStream("Avatar.jpg", FileMode.Open, FileAccess.Read);
             else
                 return new FileStream(
-                    StringHelper.DownloadImageAsync(Httpclient, Client.CurrentUser.GetAvatarUrl()).GetAwaiter().GetResult(),
+                    StringHelper.DownloadImageAsync(_httpClient, _client.CurrentUser.GetAvatarUrl()).GetAwaiter().GetResult(),
                     FileMode.Open, FileAccess.Read);
         }
 
         public WebhookService(HttpClient httpClient, GuildHandler guild, DiscordSocketClient client)
         {
-            Guildhandler = guild;
-            Client = client;
-            Httpclient = httpClient;
+            _guildhandler = guild;
+            _client = client;
+            _httpClient = httpClient;
         }
 
         public DiscordWebhookClient WebhookClient(ulong id, string token)
@@ -47,7 +47,7 @@ namespace ArcadesBot
 
         public async Task SendMessageAsync(WebhookOptions options)
         {
-            if (!(this.Client.GetChannel(options.Webhook.TextChannel) is SocketTextChannel channel)) return;
+            if (!(this._client.GetChannel(options.Webhook.TextChannel) is SocketTextChannel channel)) return;
             var client = WebhookClient(options.Webhook.WebhookId, options.Webhook.WebhookToken);
             await WebhookFallbackAsync(client, channel, options);
         }
@@ -85,7 +85,7 @@ namespace ArcadesBot
 
         public async Task<WebhookWrapper> UpdateWebhookAsync(SocketTextChannel channel, WebhookWrapper old, WebhookOptions options)
         {
-            var hook = !(Client.GetChannel(old.TextChannel) is SocketTextChannel getChannel) ?
+            var hook = !(_client.GetChannel(old.TextChannel) is SocketTextChannel getChannel) ?
                 await GetWebhookAsync(channel.Guild, new WebhookOptions { Webhook = old }) :
                 await GetWebhookAsync(getChannel, new WebhookOptions { Webhook = old });
             if (channel.Id == old.TextChannel && hook != null) return old;

@@ -20,8 +20,8 @@ namespace ArcadesBot
             _assetService = assetService;
         }
 
-        private readonly AssetService _assetService;
-        private readonly ChessHelper _chessHelper;
+        private AssetService _assetService { get; }
+        private ChessHelper _chessHelper { get; }
 
         #region Public Methods
 

@@ -13,8 +13,8 @@ namespace ArcadesBot
     [Summary("All the commands related to chess")]
     public class ChessModule : Base
     {
-        private readonly ChessHelper _chessHelper;
-        private readonly ChessService _chessService;
+        private ChessHelper _chessHelper { get; }
+        private ChessService _chessService { get; }
 
         public ChessModule(ChessService chessService, ChessHelper chessHelper)
         {

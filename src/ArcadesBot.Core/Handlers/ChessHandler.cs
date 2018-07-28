@@ -1,8 +1,6 @@
 ﻿using Discord;
-using Raven.Client.Documents;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ArcadesBot
 {
@@ -10,24 +8,24 @@ namespace ArcadesBot
     {
         public ChessHandler(DatabaseHandler databaseHandler, ChessStatsHandler stats)
         {
-            Database = databaseHandler;
-            StatsHandler = stats;
+            _database = databaseHandler;
+            _statsHandler = stats;
         }
-        private DatabaseHandler Database { get; }
-        private ChessStatsHandler StatsHandler { get; }
+        private DatabaseHandler _database { get; }
+        private ChessStatsHandler _statsHandler { get; }
 
 
         public List<ChessMatchModel> Matches 
-            => Database.Query<ChessMatchModel>();
+            => _database.Query<ChessMatchModel>();
         public List<ChessChallengeModel> Challenges 
-            => Database.Query<ChessChallengeModel>();
+            => _database.Query<ChessChallengeModel>();
         public List<ChessMatchStatsModel> Stats 
-            => Database.Query<ChessMatchStatsModel>();
+            => _database.Query<ChessMatchStatsModel>();
 
         #region Public Methods
         public void CompleteMatch(ref ChessMatchModel chessMatch)
         {
-            var statId = StatsHandler.AddStat(chessMatch);
+            var statId = _statsHandler.AddStat(chessMatch);
             chessMatch.IdOfStat = statId;
             PrettyConsole.Log(LogSeverity.Info, "Complete ChessMatch", $"Completed Chess Match With Id: {chessMatch.Id}");
         }
@@ -35,7 +33,7 @@ namespace ArcadesBot
         public void AddMatch(ulong guildId, ulong channelId, ulong challenger, ulong challengee, string whiteAvatarUrl, string blackAvatarUrl)
         {
             var id = Guid.NewGuid().ToString();
-            Database.Create<ChessMatchModel>(ref id, new ChessMatchModel
+            _database.Create<ChessMatchModel>(ref id, new ChessMatchModel
             {
                 ChallengerId = challenger,
                 ChallengeeId = challengee,
@@ -55,26 +53,26 @@ namespace ArcadesBot
             {
                 CompleteMatch(ref chessMatch);
             }
-            Database.Update<ChessMatchModel>($"{chessMatch.Id}", chessMatch);
+            _database.Update<ChessMatchModel>($"{chessMatch.Id}", chessMatch);
         }
 
         public void AddChallenge(ChessChallengeModel challenge)
         {
             var id = Guid.NewGuid().ToString();
-            Database.Create<ChessChallengeModel>(ref id, challenge);
+            _database.Create<ChessChallengeModel>(ref id, challenge);
         }
 
         public void UpdateChallenge(ChessChallengeModel chessChallenge)
         {
             if (chessChallenge == null)
                 return;
-            Database.Update<ChessChallengeModel>($"{chessChallenge.Id}", chessChallenge);
+            _database.Update<ChessChallengeModel>($"{chessChallenge.Id}", chessChallenge);
         }
         public void RemoveChallenge(ChessChallengeModel chessChallenge)
         {
             if (chessChallenge == null)
                 return;
-            Database.Delete<ChessChallengeModel>($"{chessChallenge.Id}");
+            _database.Delete<ChessChallengeModel>($"{chessChallenge.Id}");
         }
         #endregion
     }

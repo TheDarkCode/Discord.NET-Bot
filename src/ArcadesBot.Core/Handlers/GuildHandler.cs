@@ -5,20 +5,20 @@ namespace ArcadesBot
 {
     public class GuildHandler
     {
-        DatabaseHandler Store { get; }
-        public GuildHandler(DatabaseHandler store) 
-            => Store = store;
+        DatabaseHandler _database { get; }
+        public GuildHandler(DatabaseHandler database) 
+            => _database = database;
 
         public GuildModel GetGuild(ulong id) 
-            => Store.Select<GuildModel>(id: $"{id}");
+            => _database.Select<GuildModel>(id: $"{id}");
 
         public void RemoveGuild(ulong id) 
-            => Store.Delete<GuildModel>(id: id);
+            => _database.Delete<GuildModel>(id: id);
 
         public void AddGuild(ulong id)
         {
             string refId = $"{id}";
-            Store.Create<GuildModel>(ref refId, new GuildModel { Id = $"{id}", Prefix = "%" });
+            _database.Create<GuildModel>(ref refId, new GuildModel { Id = $"{id}", Prefix = "%" });
         }
             
     }

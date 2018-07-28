@@ -9,7 +9,7 @@ namespace ArcadesBot.Modules.Eval
     [RequireOwner]
     public class EvalModule : ModuleBase<CustomCommandContext>
     {
-        private readonly RoslynManager _roslyn;
+        private RoslynManager _roslyn { get; }
 
         public EvalModule(IServiceProvider provider)
         {

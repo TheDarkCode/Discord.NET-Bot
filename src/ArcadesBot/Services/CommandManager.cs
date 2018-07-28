@@ -11,16 +11,13 @@ namespace ArcadesBot
 {
     public class CommandManager
     {
-        private readonly DiscordSocketClient _discord;
-        private readonly CommandService _commands;
-        private readonly GuildHelper _guildhelper;
-        private readonly GuildHandler _guildhandler;
-        private readonly WebhookService _webhookservice;
-        private Random _random;
-
-        //private readonly IChessService _chessService;
-        //private readonly ConfigDatabase _manager;
-        private readonly IServiceProvider _provider;
+        private DiscordSocketClient _discord { get; }
+        private CommandService _commands { get; }
+        private GuildHelper _guildhelper { get; }
+        private GuildHandler _guildhandler { get; }
+        private WebhookService _webhookservice { get; }
+        private Random _random { get; }
+        private IServiceProvider _provider { get; }
 
         public CommandManager(IServiceProvider provider)
         {
