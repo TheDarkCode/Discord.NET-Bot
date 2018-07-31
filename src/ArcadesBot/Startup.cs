@@ -2,11 +2,9 @@
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Google.Apis.Customsearch.v1;
 using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
 using Microsoft.Extensions.DependencyInjection;
-using Raven.Client.Documents;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -63,6 +61,9 @@ namespace ArcadesBot
             
             discord.Log += OnLogAsync;
             commands.Log += OnLogAsync;
+
+
+            commands.AddTypeReader<TagModel>(new TagModelTypeReader());
 
             services.AddSingleton(discord);
             services.AddSingleton(commands);

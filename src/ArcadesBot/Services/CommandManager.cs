@@ -43,20 +43,6 @@ namespace ArcadesBot
             PrettyConsole.Log(LogSeverity.Info, "Commands", $"Loaded {_commands.Modules.Count()} modules with {_commands.Commands.Count()} commands");
         }   
 
-
-        internal async Task ResultAsync(CustomCommandContext context, IResult result)
-        {
-            if (result.IsSuccess)
-                return;
-
-            if (result is ExecuteResult r)
-            {
-                PrettyConsole.Log(LogSeverity.Error, "Commands", r.Exception?.ToString());
-                return;
-            }
-
-            await context.Channel.SendMessageAsync(result.ErrorReason);
-        }
         internal async Task CommandHandlerAsync(SocketMessage message)
         {
             if (!(message is SocketUserMessage msg))
@@ -81,8 +67,25 @@ namespace ArcadesBot
                     break;
                 case CommandError.UnmetPrecondition:
                     if (!result.ErrorReason.Contains("SendMessages"))
-                        await context.Channel.SendMessageAsync(result.ErrorReason);
+                        await context.Channel.SendMessageAsync(embed: new EmbedBuilder().WithErrorColor()
+                            .WithDescription(result.ErrorReason).Build());
                     break;
+                case CommandError.UnknownCommand:
+                    break;
+                case CommandError.ParseFailed:
+                    break;
+                case CommandError.BadArgCount:
+                    break;
+                case CommandError.ObjectNotFound:
+                    await context.Channel.SendMessageAsync(embed: new EmbedBuilder().WithErrorColor()
+                        .WithDescription(result.ErrorReason).Build());
+                    break;
+                case CommandError.MultipleMatches:
+                    break;
+                case CommandError.Unsuccessful:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
             _ = Task.Run(() => RecordCommand(command, context));
         }
@@ -103,31 +106,6 @@ namespace ArcadesBot
         internal Task GuildAvailable(SocketGuild guild) 
             => Task.Run(() 
                 => _guildhandler.AddGuild(guild.Id));
-
-        internal async Task CheckStateAsync()
-        {
-            if (_discord.ConnectionState == ConnectionState.Connected)
-                return;
-
-            var timeout = Task.Delay(TimeSpan.FromSeconds(30));
-            var connect = _discord.StartAsync();
-            var localTask = await Task.WhenAny(timeout, connect);
-
-            if (localTask == timeout || connect.IsFaulted)
-                Environment.Exit(1);
-            else if (connect.IsCompletedSuccessfully)
-            {
-                PrettyConsole.Log(LogSeverity.Info, "Connection Manager", "Client Reset Completed.");
-                return;
-            }
-            else
-                Environment.Exit(1);
-        }
-        internal Task Connected()
-        {
-            PrettyConsole.Log(LogSeverity.Info, "Connected", "Connected to Discord.");
-            return Task.CompletedTask;
-        }
 
         internal async Task UserLeftAsync(SocketGuildUser user)
         {

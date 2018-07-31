@@ -1,6 +1,6 @@
-﻿using Discord;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Discord;
 
 namespace ArcadesBot
 {
@@ -10,6 +10,7 @@ namespace ArcadesBot
         public MutedInfo MutedInfo { get; set; } = new MutedInfo();
         public Dictionary<string, int> Commands { get; set; } = new Dictionary<string, int>();
     }
+
     public class WebhookOptions
     {
         public string Name { get; set; }
@@ -17,12 +18,14 @@ namespace ArcadesBot
         public string Message { get; set; }
         public WebhookWrapper Webhook { get; set; } = new WebhookWrapper();
     }
+
     public class WebhookWrapper
     {
         public ulong TextChannel { get; set; }
         public ulong WebhookId { get; set; }
         public string WebhookToken { get; set; }
     }
+
     public class ModWrapper
     {
         public ulong JoinRole { get; set; }
@@ -30,6 +33,7 @@ namespace ArcadesBot
         public ulong TextChannel { get; set; }
         public bool LogDeletedMessages { get; set; }
     }
+
     public class MutedInfo
     {
         public bool IsMuted { get; set; } = false;

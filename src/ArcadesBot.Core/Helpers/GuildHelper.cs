@@ -1,18 +1,12 @@
-﻿using System;
-using Discord;
+﻿using System.Collections.Generic;
 using System.Linq;
+using Discord;
 using Discord.WebSocket;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
 
 namespace ArcadesBot
 {
     public class GuildHelper
     {
-        private GuildHandler _guildHandler { get; }
-        private DiscordSocketClient _client { get; }
-        private DatabaseHandler _database { get; }
         public GuildHelper(GuildHandler guildHandler, DiscordSocketClient client, DatabaseHandler database)
         {
             _client = client;
@@ -20,10 +14,16 @@ namespace ArcadesBot
             _database = database;
         }
 
+        private GuildHandler _guildHandler { get; }
+        private DiscordSocketClient _client { get; }
+        private DatabaseHandler _database { get; }
+
         public IMessageChannel DefaultChannel(ulong guildId)
         {
             var guild = _client.GetGuild(guildId);
-            return guild.TextChannels.FirstOrDefault(x => x.Name.Contains("general") || x.Name.Contains("lobby") || x.Id == guild.Id) ?? guild.DefaultChannel;
+            return guild.TextChannels.FirstOrDefault(x =>
+                       x.Name.Contains("general") || x.Name.Contains("lobby") || x.Id == guild.Id) ??
+                   guild.DefaultChannel;
         }
 
         public UserProfile GetProfile(ulong guildId, ulong userId)
@@ -44,10 +44,10 @@ namespace ArcadesBot
                 _database.Update<GuildModel>(guild.Id, guild);
                 return true;
             }
+
             guild.BlackListedChannels.Remove(channelId);
             _database.Update<GuildModel>(guild.Id, guild);
             return false;
-            
         }
 
         public void SaveProfile(ulong guildId, ulong userId, UserProfile profile)
@@ -61,7 +61,7 @@ namespace ArcadesBot
         {
             if (string.IsNullOrWhiteSpace(channel))
                 return (true, 0);
-            UInt64.TryParse(channel.Replace('<', ' ').Replace('>', ' ').Replace('#', ' ').Replace(" ", ""), out var id);
+            ulong.TryParse(channel.Replace('<', ' ').Replace('>', ' ').Replace('#', ' ').Replace(" ", ""), out var id);
             var getChannel = guild.GetTextChannel(id);
             if (getChannel != null)
                 return (true, id);
@@ -73,7 +73,9 @@ namespace ArcadesBot
         {
             if (string.IsNullOrWhiteSpace(role))
                 return (true, 0);
-            UInt64.TryParse(role.Replace('<', ' ').Replace('>', ' ').Replace('@', ' ').Replace('&', ' ').Replace(" ", ""), out var id);
+            ulong.TryParse(
+                role.Replace('<', ' ').Replace('>', ' ').Replace('@', ' ').Replace('&', ' ').Replace(" ", ""),
+                out var id);
             var getRole = guild.GetRole(id);
             if (getRole != null)
                 return (true, id);
@@ -83,9 +85,10 @@ namespace ArcadesBot
             return (false, 0);
         }
 
-        public (bool Added, string Message) ListCheck<T>(List<T> collection, object value, string objectName, string collectionName)
+        public (bool Added, string Message) ListCheck<T>(List<T> collection, object value, string objectName,
+            string collectionName)
         {
-            if (collection.Contains((T)value))
+            if (collection.Contains((T) value))
                 return (false, $"{objectName} already exists in {collectionName}.");
             if (collection.Count == collection.Capacity)
                 return (false, "Reached max number of entries");
@@ -96,7 +99,8 @@ namespace ArcadesBot
         public bool HierarchyCheck(IGuild guild, IGuildUser user)
         {
             var guildSocket = guild as SocketGuild;
-            var highestRole = guildSocket.CurrentUser.Roles.OrderByDescending(x => x.Position).FirstOrDefault().Position;
+            var highestRole = guildSocket.CurrentUser.Roles.OrderByDescending(x => x.Position).FirstOrDefault()
+                .Position;
             return (user as SocketGuildUser).Roles.Any(x => x.Position > highestRole);
         }
     }

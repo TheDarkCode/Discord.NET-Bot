@@ -33,7 +33,7 @@ namespace ArcadesBot
                 $"```diff\n" +
                 $"+ Join Role           : @{StringHelper.CheckRole(Context.Guild as SocketGuild, Context.Server.Mod.JoinRole)}\n" +
                 $"+ Mute Role           : @{StringHelper.CheckRole(Context.Guild as SocketGuild, Context.Server.Mod.MuteRole)}\n" +
-                $"+ Blacklisted Users   : {Context.Server.Profiles.Where(x => x.Value.IsBlacklisted).Count()}\n" +
+                $"+ Blacklisted Users   : {Context.Server.Profiles.Count(x => x.Value.IsBlacklisted)}\n" +
                 $"+ Blacklisted Channels: {Context.Server.BlackListedChannels.Count}\n" +
                 $"```", false);
             return ReplyEmbedAsync(embed: embed);

@@ -1,14 +1,16 @@
-﻿using ChessDotNet;
-using Discord;
-using SixLabors.ImageSharp;
-using SixLabors.Primitives;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using ChessDotNet;
+using Discord;
+using SixLabors.ImageSharp;
+using SixLabors.Primitives;
+using File = ChessDotNet.File;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace ArcadesBot
 {
@@ -28,11 +30,9 @@ namespace ArcadesBot
         public ulong WhoseTurn(ChessMatchStatusModel match)
         {
             if (match.Game == null)
-            {
-                match.Game = match.Match.HistoryList.Count == 0 
-                    ? new ChessGame() 
+                match.Game = match.Match.HistoryList.Count == 0
+                    ? new ChessGame()
                     : new ChessGame(match.Match.HistoryList.Select(x => x.Move), true);
-            }
 
             return match.Game.WhoseTurn != Player.White ? match.Match.ChallengeeId : match.Match.ChallengerId;
         }
@@ -45,8 +45,8 @@ namespace ArcadesBot
             var moves = match.HistoryList.Select(x => x.Move);
             ChessGame game;
             var enumerable = moves.ToList();
-            game = enumerable.Count != 0 
-                ? new ChessGame(enumerable, true) 
+            game = enumerable.Count != 0
+                ? new ChessGame(enumerable, true)
                 : new ChessGame();
             var otherPlayer = game.WhoseTurn == Player.White ? Player.Black : Player.White;
             var linkFromMatchAsync = await GetImageLinkFromMatchAsync(match);
@@ -61,9 +61,8 @@ namespace ArcadesBot
         }
 
 
-        
-
-        public ChessChallengeModel Challenge(ulong guildId, ulong channelId, IUser player1, IUser player2, Action<ChessChallengeModel> onTimeout = null)
+        public ChessChallengeModel Challenge(ulong guildId, ulong channelId, IUser player1, IUser player2,
+            Action<ChessChallengeModel> onTimeout = null)
         {
             if (player1.Equals(player2))
                 throw new ChessException("You can't challenge yourself.");
@@ -78,7 +77,9 @@ namespace ArcadesBot
         }
 
         public ulong Resign(ulong guildId, ulong channelId, IUser player)
-            => _chessHelper.Resign(guildId, channelId, player.Id);
+        {
+            return _chessHelper.Resign(guildId, channelId, player.Id);
+        }
 
         public ChessMatchModel AcceptChallenge(CustomCommandContext context, IUser player)
         {
@@ -88,7 +89,8 @@ namespace ArcadesBot
                 throw new ChessException("No challenge exists for you to accept.");
 
             if (_chessHelper.CheckPlayerInMatch(context.Guild.Id, challenge.ChallengeeId))
-                throw new ChessException(string.Format("{0} is currently in a game.", context.Guild.GetUser(challenge.ChallengeeId)));
+                throw new ChessException(string.Format("{0} is currently in a game.",
+                    context.Guild.GetUser(challenge.ChallengeeId)));
 
             var challengee = context.Client.GetUser(challenge.ChallengeeId);
             var challenger = context.Client.GetUser(challenge.ChallengerId);
@@ -99,7 +101,8 @@ namespace ArcadesBot
             return _chessHelper.AcceptChallenge(challenge, blackUrl, whiteUrl);
         }
 
-        public async Task<ChessMatchStatusModel> Move(Stream stream, ulong guildId, ulong channelId, IUser player, string rawMove)
+        public async Task<ChessMatchStatusModel> Move(Stream stream, ulong guildId, ulong channelId, IUser player,
+            string rawMove)
         {
             var rankToRowMap = new Dictionary<int, int>
             {
@@ -120,12 +123,13 @@ namespace ArcadesBot
                 throw new ChessException("You are not currently in a game");
 
             var moves = match.HistoryList.Select(x => x.Move);
-            var game = moves.Count() != 0 
-                ? new ChessGame(moves, true) 
+            var game = moves.Count() != 0
+                ? new ChessGame(moves, true)
                 : new ChessGame();
             var whoseTurn = game.WhoseTurn;
             var otherPlayer = whoseTurn == Player.White ? Player.Black : Player.White;
-            if (whoseTurn == Player.White && player.Id != match.ChallengerId || whoseTurn == Player.Black && player.Id != match.ChallengeeId)
+            if (whoseTurn == Player.White && player.Id != match.ChallengerId ||
+                whoseTurn == Player.Black && player.Id != match.ChallengeeId)
                 throw new ChessException("It's not your turn.");
 
             var sourceX = moveInput[0].ToString();
@@ -133,7 +137,7 @@ namespace ArcadesBot
             var destX = moveInput[2].ToString();
             var destY = moveInput[3].ToString();
 
-            var positionEnumValues = (IEnumerable<ChessDotNet.File>)Enum.GetValues(typeof(ChessDotNet.File));
+            var positionEnumValues = (IEnumerable<File>) Enum.GetValues(typeof(File));
             var sourcePositionX = positionEnumValues.Single(x => x.ToString("g") == sourceX);
             var destPositionX = positionEnumValues.Single(x => x.ToString("g") == destX);
 
@@ -176,7 +180,7 @@ namespace ArcadesBot
                 Game = game,
                 ImageLink = imageLinkValues.ImageLink,
                 Status = endCause,
-                WinnerId = endCause == Cause.Checkmate ? (ulong?)player.Id : null,
+                WinnerId = endCause == Cause.Checkmate ? (ulong?) player.Id : null,
                 IsCheck = game.IsInCheck(otherPlayer),
                 IsCheckmated = game.IsCheckmated(otherPlayer),
                 Match = match
@@ -191,7 +195,7 @@ namespace ArcadesBot
 
         private void DrawImage(IImageProcessingContext<Rgba32> processor, string name, int x, int y)
         {
-            var image = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath($"{name}.png"));
+            var image = Image.Load(_assetService.GetImagePath($"{name}.png"));
             processor.DrawImage(image, new Size(50, 50), new Point(x * 50 + 117, y * 50 + 19), new GraphicsOptions());
         }
 
@@ -199,12 +203,12 @@ namespace ArcadesBot
         {
             await Task.Run(async () =>
             {
-                var board = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath("board.png"));
+                var board = Image.Load(_assetService.GetImagePath("board.png"));
 
                 var httpClient = new HttpClient();
-                var turnIndicator = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath("turn_indicator.png"));
-                var whiteAvatarData = SixLabors.ImageSharp.Image.Load(await httpClient.GetByteArrayAsync(match.WhiteAvatarUrl));
-                var blackAvatarData = SixLabors.ImageSharp.Image.Load(await httpClient.GetByteArrayAsync(match.BlackAvatarUrl));
+                var turnIndicator = Image.Load(_assetService.GetImagePath("turn_indicator.png"));
+                var whiteAvatarData = Image.Load(await httpClient.GetByteArrayAsync(match.WhiteAvatarUrl));
+                var blackAvatarData = Image.Load(await httpClient.GetByteArrayAsync(match.BlackAvatarUrl));
                 httpClient.Dispose();
 
                 var moves = match.HistoryList.Select(x => x.Move);
@@ -213,7 +217,7 @@ namespace ArcadesBot
 
                 var boardPieces = game.GetBoard();
 
-                var lastMove = match.HistoryList.OrderByDescending((x => x.MoveDate)).FirstOrDefault();
+                var lastMove = match.HistoryList.OrderByDescending(x => x.MoveDate).FirstOrDefault();
                 var rankToRowMap = new Dictionary<int, int>
                 {
                     {1, 7},
@@ -229,169 +233,197 @@ namespace ArcadesBot
                 board.Mutate(processor =>
                 {
                     #region Mutating the board
+
                     for (var x = 0; x < boardPieces.Length; ++x)
+                    for (var y = 0; y < boardPieces[x].Length; ++y)
                     {
-                        for (var y = 0; y < boardPieces[x].Length; ++y)
+                        if (lastMove != null && (lastMove.Move.OriginalPosition.File == (File) x &&
+                                                 rankToRowMap[lastMove.Move.OriginalPosition.Rank] == y
+                                                 || lastMove.Move.NewPosition.File == (File) x &&
+                                                 rankToRowMap[lastMove.Move.NewPosition.Rank] == y))
+                            DrawImage(processor, "yellow_square", x, y);
+                        var piece = boardPieces[y][x];
+                        if (piece != null)
                         {
-                            if (lastMove != null && (lastMove.Move.OriginalPosition.File == (ChessDotNet.File)x && rankToRowMap[lastMove.Move.OriginalPosition.Rank] == y
-                            || lastMove.Move.NewPosition.File == (ChessDotNet.File)x && rankToRowMap[lastMove.Move.NewPosition.Rank] == y))
-                            {
-                                DrawImage(processor, "yellow_square", x, y);
-                            }
-                            var piece = boardPieces[y][x];
-                            if (piece != (Piece)null)
-                            {
-                                if (piece.GetFenCharacter().ToString().ToUpper() == "K" && game.IsInCheck(piece.Owner))
-                                {
-                                    DrawImage(processor, "red_square", x, y);
-                                }
-                                var str = "white";
-                                if (new char[6] { 'r', 'n', 'b', 'q', 'k', 'p' }.Contains(piece.GetFenCharacter()))
-                                    str = "black";
-                                DrawImage(processor, string.Format("{0}_{1}", str, piece.GetFenCharacter()), x, y);
-                            }
+                            if (piece.GetFenCharacter().ToString().ToUpper() == "K" && game.IsInCheck(piece.Owner))
+                                DrawImage(processor, "red_square", x, y);
+                            var str = "white";
+                            if (new char[6] {'r', 'n', 'b', 'q', 'k', 'p'}.Contains(piece.GetFenCharacter()))
+                                str = "black";
+                            DrawImage(processor, string.Format("{0}_{1}", str, piece.GetFenCharacter()), x, y);
                         }
                     }
-                    var blackPawnCount = game.PiecesOnBoard.Count(x => x.GetFenCharacter() == 'p' && x.Owner == Player.Black && !x.IsPromotionResult);
-                    var whitePawnCount = game.PiecesOnBoard.Count(x => x.GetFenCharacter() == 'P' && x.Owner == Player.White && !x.IsPromotionResult);
-                    var blackRookCount = game.PiecesOnBoard.Count(x => x.GetFenCharacter() == 'r' && x.Owner == Player.Black && !x.IsPromotionResult);
-                    var whiteRookCount = game.PiecesOnBoard.Count(x => x.GetFenCharacter() == 'R' && x.Owner == Player.White && !x.IsPromotionResult);
-                    var blackKnightCount = game.PiecesOnBoard.Count(x => x.GetFenCharacter() == 'n' && x.Owner == Player.Black && !x.IsPromotionResult);
-                    var whiteKnightCount = game.PiecesOnBoard.Count(x => x.GetFenCharacter() == 'N' && x.Owner == Player.White && !x.IsPromotionResult);
-                    var blackBishopCount = game.PiecesOnBoard.Count(x => x.GetFenCharacter() == 'b' && x.Owner == Player.Black && !x.IsPromotionResult);
-                    var whiteBishopCount = game.PiecesOnBoard.Count(x => x.GetFenCharacter() == 'B' && x.Owner == Player.White && !x.IsPromotionResult);
-                    var blackQueenCount = game.PiecesOnBoard.Count(x => x.GetFenCharacter() == 'q' && x.Owner == Player.Black && !x.IsPromotionResult);
-                    var whiteQueenCount = game.PiecesOnBoard.Count(x => x.GetFenCharacter() == 'Q' && x.Owner == Player.White && !x.IsPromotionResult);
+
+                    var blackPawnCount = game.PiecesOnBoard.Count(x =>
+                        x.GetFenCharacter() == 'p' && x.Owner == Player.Black && !x.IsPromotionResult);
+                    var whitePawnCount = game.PiecesOnBoard.Count(x =>
+                        x.GetFenCharacter() == 'P' && x.Owner == Player.White && !x.IsPromotionResult);
+                    var blackRookCount = game.PiecesOnBoard.Count(x =>
+                        x.GetFenCharacter() == 'r' && x.Owner == Player.Black && !x.IsPromotionResult);
+                    var whiteRookCount = game.PiecesOnBoard.Count(x =>
+                        x.GetFenCharacter() == 'R' && x.Owner == Player.White && !x.IsPromotionResult);
+                    var blackKnightCount = game.PiecesOnBoard.Count(x =>
+                        x.GetFenCharacter() == 'n' && x.Owner == Player.Black && !x.IsPromotionResult);
+                    var whiteKnightCount = game.PiecesOnBoard.Count(x =>
+                        x.GetFenCharacter() == 'N' && x.Owner == Player.White && !x.IsPromotionResult);
+                    var blackBishopCount = game.PiecesOnBoard.Count(x =>
+                        x.GetFenCharacter() == 'b' && x.Owner == Player.Black && !x.IsPromotionResult);
+                    var whiteBishopCount = game.PiecesOnBoard.Count(x =>
+                        x.GetFenCharacter() == 'B' && x.Owner == Player.White && !x.IsPromotionResult);
+                    var blackQueenCount = game.PiecesOnBoard.Count(x =>
+                        x.GetFenCharacter() == 'q' && x.Owner == Player.Black && !x.IsPromotionResult);
+                    var whiteQueenCount = game.PiecesOnBoard.Count(x =>
+                        x.GetFenCharacter() == 'Q' && x.Owner == Player.White && !x.IsPromotionResult);
                     var row = 1;
 
-                    var blackPawn = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath("black_p.png"));
+                    var blackPawn = Image.Load(_assetService.GetImagePath("black_p.png"));
 
                     for (var index = 8; index > blackPawnCount; --index)
-                    {
                         if (index % 2 == 0)
                         {
-                            processor.DrawImage(blackPawn, new Size(30, 30), new Point(533, 16 + row * 30), new GraphicsOptions());
+                            processor.DrawImage(blackPawn, new Size(30, 30), new Point(533, 16 + row * 30),
+                                new GraphicsOptions());
                         }
                         else
                         {
-                            processor.DrawImage(blackPawn, new Size(30, 30), new Point(566, 16 + row * 30), new GraphicsOptions());
+                            processor.DrawImage(blackPawn, new Size(30, 30), new Point(566, 16 + row * 30),
+                                new GraphicsOptions());
                             ++row;
                         }
-                    }
+
                     row = 8;
 
-                    var image2 = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath("white_P.png"));
+                    var image2 = Image.Load(_assetService.GetImagePath("white_P.png"));
                     for (var index = 8; index > whitePawnCount; --index)
-                    {
                         if (index % 2 == 0)
                         {
-                            processor.DrawImage(image2, new Size(30, 30), new Point(20, 125 + row * 30), new GraphicsOptions());
+                            processor.DrawImage(image2, new Size(30, 30), new Point(20, 125 + row * 30),
+                                new GraphicsOptions());
                         }
                         else
                         {
-                            processor.DrawImage(image2, new Size(30, 30), new Point(53, 125 + row * 30), new GraphicsOptions());
+                            processor.DrawImage(image2, new Size(30, 30), new Point(53, 125 + row * 30),
+                                new GraphicsOptions());
                             --row;
                         }
-                    }
+
                     row = 5;
 
-                    var image3 = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath("black_r.png"));
+                    var image3 = Image.Load(_assetService.GetImagePath("black_r.png"));
                     for (var index = 2; index > blackRookCount; --index)
-                    {
                         if (index % 2 == 0)
                         {
-                            processor.DrawImage(image3, new Size(30, 30), new Point(533, 16 + row * 30), new GraphicsOptions());
+                            processor.DrawImage(image3, new Size(30, 30), new Point(533, 16 + row * 30),
+                                new GraphicsOptions());
                         }
                         else
                         {
-                            processor.DrawImage(image3, new Size(30, 30), new Point(566, 16 + row * 30), new GraphicsOptions());
+                            processor.DrawImage(image3, new Size(30, 30), new Point(566, 16 + row * 30),
+                                new GraphicsOptions());
                             ++row;
                         }
-                    }
+
                     row = 4;
 
-                    var whiteRook = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath("white_R.png"));
+                    var whiteRook = Image.Load(_assetService.GetImagePath("white_R.png"));
                     for (var index = 2; index > whiteRookCount; --index)
-                    {
                         if (index % 2 == 0)
                         {
-                            processor.DrawImage(whiteRook, new Size(30, 30), new Point(20, 125 + row * 30), new GraphicsOptions());
+                            processor.DrawImage(whiteRook, new Size(30, 30), new Point(20, 125 + row * 30),
+                                new GraphicsOptions());
                         }
                         else
                         {
-                            processor.DrawImage(whiteRook, new Size(30, 30), new Point(53, 125 + row * 30), new GraphicsOptions());
+                            processor.DrawImage(whiteRook, new Size(30, 30), new Point(53, 125 + row * 30),
+                                new GraphicsOptions());
                             --row;
                         }
-                    }
+
                     row = 6;
 
-                    var blackKnight = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath("black_n.png"));
+                    var blackKnight = Image.Load(_assetService.GetImagePath("black_n.png"));
                     for (var index = 2; index > blackKnightCount; --index)
-                    {
                         if (index % 2 == 0)
-                            processor.DrawImage(blackKnight, new Size(30, 30), new Point(533, 16 + row * 30), new GraphicsOptions());
+                        {
+                            processor.DrawImage(blackKnight, new Size(30, 30), new Point(533, 16 + row * 30),
+                                new GraphicsOptions());
+                        }
                         else
                         {
-                            processor.DrawImage(blackKnight, new Size(30, 30), new Point(566, 16 + row * 30), new GraphicsOptions());
+                            processor.DrawImage(blackKnight, new Size(30, 30), new Point(566, 16 + row * 30),
+                                new GraphicsOptions());
                             ++row;
                         }
-                    }
+
                     row = 3;
 
-                    var whiteKnight = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath("white_N.png"));
+                    var whiteKnight = Image.Load(_assetService.GetImagePath("white_N.png"));
                     for (var i = 2; i > whiteKnightCount; --i)
-                    {
                         if (i % 2 == 0)
-                            processor.DrawImage(whiteKnight, new Size(30, 30), new Point(20, 125 + row * 30), new GraphicsOptions());
+                        {
+                            processor.DrawImage(whiteKnight, new Size(30, 30), new Point(20, 125 + row * 30),
+                                new GraphicsOptions());
+                        }
                         else
                         {
-                            processor.DrawImage(whiteKnight, new Size(30, 30), new Point(53, 125 + row * 30), new GraphicsOptions());
+                            processor.DrawImage(whiteKnight, new Size(30, 30), new Point(53, 125 + row * 30),
+                                new GraphicsOptions());
                             --row;
                         }
-                    }
+
                     row = 7;
 
-                    var blackBishop = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath("black_b.png"));
+                    var blackBishop = Image.Load(_assetService.GetImagePath("black_b.png"));
                     for (var index = 2; index > blackBishopCount; --index)
-                    {
                         if (index % 2 == 0)
-                            processor.DrawImage(blackBishop, new Size(30, 30), new Point(533, 16 + row * 30), new GraphicsOptions());
+                        {
+                            processor.DrawImage(blackBishop, new Size(30, 30), new Point(533, 16 + row * 30),
+                                new GraphicsOptions());
+                        }
                         else
                         {
-                            processor.DrawImage(blackBishop, new Size(30, 30), new Point(566, 16 + row * 30), new GraphicsOptions());
+                            processor.DrawImage(blackBishop, new Size(30, 30), new Point(566, 16 + row * 30),
+                                new GraphicsOptions());
                             ++row;
                         }
-                    }
+
                     row = 2;
 
-                    var whiteBishop = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath("white_B.png"));
+                    var whiteBishop = Image.Load(_assetService.GetImagePath("white_B.png"));
                     for (var index = 2; index > whiteBishopCount; --index)
-                    {
                         if (index % 2 == 0)
-                            processor.DrawImage(whiteBishop, new Size(30, 30), new Point(20, 125 + row * 30), new GraphicsOptions());
+                        {
+                            processor.DrawImage(whiteBishop, new Size(30, 30), new Point(20, 125 + row * 30),
+                                new GraphicsOptions());
+                        }
                         else
                         {
-                            processor.DrawImage(whiteBishop, new Size(30, 30), new Point(53, 125 + row * 30), new GraphicsOptions());
+                            processor.DrawImage(whiteBishop, new Size(30, 30), new Point(53, 125 + row * 30),
+                                new GraphicsOptions());
                             --row;
                         }
-                    }
+
                     row = 8;
 
-                    var blackQueen = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath("black_q.png"));
+                    var blackQueen = Image.Load(_assetService.GetImagePath("black_q.png"));
                     if (blackQueenCount == 0)
-                        processor.DrawImage(blackQueen, new Size(30, 30), new Point(533, 16 + row * 30), new GraphicsOptions());
+                        processor.DrawImage(blackQueen, new Size(30, 30), new Point(533, 16 + row * 30),
+                            new GraphicsOptions());
                     row = 1;
 
-                    var whiteQueen = SixLabors.ImageSharp.Image.Load(_assetService.GetImagePath("white_Q.png"));
+                    var whiteQueen = Image.Load(_assetService.GetImagePath("white_Q.png"));
                     if (whiteQueenCount == 0)
-                        processor.DrawImage(whiteQueen, new Size(30, 30), new Point(20, 125 + row * 30), new GraphicsOptions());
+                        processor.DrawImage(whiteQueen, new Size(30, 30), new Point(20, 125 + row * 30),
+                            new GraphicsOptions());
 
                     processor.DrawImage(turnIndicator, new Size(56, 56), turnIndicatorPoint, new GraphicsOptions());
                     processor.DrawImage(whiteAvatarData, new Size(50, 50), new Point(541, 370), new GraphicsOptions());
                     processor.DrawImage(blackAvatarData, new Size(50, 50), new Point(43, 18), new GraphicsOptions());
+
                     #endregion
                 });
-                board.Save($"{Directory.GetCurrentDirectory()}\\Chessboards\\board{match.Id}-{match.HistoryList.Count}.png");
+                board.Save(
+                    $"{Directory.GetCurrentDirectory()}\\Chessboards\\board{match.Id}-{match.HistoryList.Count}.png");
             });
 
             var nextPlayer = WhoseTurn(new ChessMatchStatusModel
@@ -400,13 +432,13 @@ namespace ArcadesBot
                 {
                     HistoryList = match.HistoryList,
                     ChallengeeId = match.ChallengeeId,
-                    ChallengerId = match.ChallengerId,
+                    ChallengerId = match.ChallengerId
                 }
             });
             return new ImageLinkModel
             {
                 ImageLink = $"attachment://board{match.Id}-{match.HistoryList.Count}.png",
-                NextPlayer = nextPlayer,
+                NextPlayer = nextPlayer
             };
         }
 
@@ -417,9 +449,10 @@ namespace ArcadesBot
             challenge = _chessHelper.GetChallenge(challenge.Id);
             if (challenge.Accepted)
                 return;
-               
+
             onTimeout?.Invoke(challenge);
         }
+
         #endregion
     }
 }

@@ -13,7 +13,8 @@ namespace ArcadesBot
         public ulong MoveCount { get; set; }
         public ulong CreatedBy { get; set; }
     }
-    public enum Cause 
+
+    public enum Cause
     {
         OnGoing,
         Resign,

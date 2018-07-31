@@ -1,6 +1,6 @@
-﻿using Discord;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Discord;
 
 namespace ArcadesBot
 {
@@ -11,26 +11,32 @@ namespace ArcadesBot
             _database = databaseHandler;
             _statsHandler = stats;
         }
+
         private DatabaseHandler _database { get; }
         private ChessStatsHandler _statsHandler { get; }
 
 
-        public List<ChessMatchModel> Matches 
+        public List<ChessMatchModel> Matches
             => _database.Query<ChessMatchModel>();
-        public List<ChessChallengeModel> Challenges 
+
+        public List<ChessChallengeModel> Challenges
             => _database.Query<ChessChallengeModel>();
-        public List<ChessMatchStatsModel> Stats 
+
+        public List<ChessMatchStatsModel> Stats
             => _database.Query<ChessMatchStatsModel>();
 
         #region Public Methods
+
         public void CompleteMatch(ref ChessMatchModel chessMatch)
         {
             var statId = _statsHandler.AddStat(chessMatch);
             chessMatch.IdOfStat = statId;
-            PrettyConsole.Log(LogSeverity.Info, "Complete ChessMatch", $"Completed Chess Match With Id: {chessMatch.Id}");
+            PrettyConsole.Log(LogSeverity.Info, "Complete ChessMatch",
+                $"Completed Chess Match With Id: {chessMatch.Id}");
         }
 
-        public void AddMatch(ulong guildId, ulong channelId, ulong challenger, ulong challengee, string whiteAvatarUrl, string blackAvatarUrl)
+        public void AddMatch(ulong guildId, ulong channelId, ulong challenger, ulong challengee, string whiteAvatarUrl,
+            string blackAvatarUrl)
         {
             var id = Guid.NewGuid().ToString();
             _database.Create<ChessMatchModel>(ref id, new ChessMatchModel
@@ -49,10 +55,7 @@ namespace ArcadesBot
         {
             if (chessMatch == null)
                 return;
-            if (chessMatch.Winner != 1)
-            {
-                CompleteMatch(ref chessMatch);
-            }
+            if (chessMatch.Winner != 1) CompleteMatch(ref chessMatch);
             _database.Update<ChessMatchModel>($"{chessMatch.Id}", chessMatch);
         }
 
@@ -68,12 +71,14 @@ namespace ArcadesBot
                 return;
             _database.Update<ChessChallengeModel>($"{chessChallenge.Id}", chessChallenge);
         }
+
         public void RemoveChallenge(ChessChallengeModel chessChallenge)
         {
             if (chessChallenge == null)
                 return;
             _database.Delete<ChessChallengeModel>($"{chessChallenge.Id}");
         }
+
         #endregion
     }
 }

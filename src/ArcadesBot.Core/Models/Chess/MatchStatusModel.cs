@@ -1,5 +1,4 @@
 ﻿using ChessDotNet;
-using Discord;
 
 namespace ArcadesBot
 {

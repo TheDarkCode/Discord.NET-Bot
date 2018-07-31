@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
 using Discord.WebSocket;
 
 namespace ArcadesBot
@@ -18,7 +15,10 @@ namespace ArcadesBot
             var get = await httpClient.GetByteArrayAsync(url).ConfigureAwait(false);
             var fileName = $"Arcade-{Guid.NewGuid().ToString("n").Substring(0, 8)}";
             using (var userImage = File.Create($"{fileName}.png"))
+            {
                 await userImage.WriteAsync(get, 0, get.Length).ConfigureAwait(false);
+            }
+
             return $"{fileName}.png";
         }
 

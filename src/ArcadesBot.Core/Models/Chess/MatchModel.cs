@@ -1,12 +1,9 @@
-﻿using ChessDotNet;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace ArcadesBot
 {
     public class ChessMatchModel
     {
-
         public string Id { get; set; }
         public ulong GuildId { get; set; }
         public ulong ChannelId { get; set; }

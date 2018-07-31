@@ -1,23 +1,26 @@
-﻿using Discord;
-using Newtonsoft.Json;
-using Raven.Client.Documents;
-using Raven.Client.ServerWide;
-using Raven.Client.ServerWide.Operations;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Discord;
+using Newtonsoft.Json;
+using Raven.Client.Documents;
+using Raven.Client.ServerWide;
+using Raven.Client.ServerWide.Operations;
 
 namespace ArcadesBot
 {
     public class DatabaseHandler
     {
-        private IDocumentStore _store { get; set; }
-        public DatabaseHandler() 
-            => Initialize();
+        public DatabaseHandler()
+        {
+            Initialize();
+        }
 
-        public ConfigModel Config 
+        private IDocumentStore _store { get; set; }
+
+        public ConfigModel Config
             => Select<ConfigModel>("Config");
 
         public static DatabaseModel DbConfig
@@ -27,30 +30,36 @@ namespace ArcadesBot
                 var dbConfigPath = $"{Directory.GetCurrentDirectory()}/config/DBConfig.json";
                 if (File.Exists(dbConfigPath))
                     return JsonConvert.DeserializeObject<DatabaseModel>(File.ReadAllText(dbConfigPath));
-
+                if (!Directory.Exists($"{Directory.GetCurrentDirectory()}/config/"))
+                    Directory.CreateDirectory($"{Directory.GetCurrentDirectory()}/config/");
                 File.WriteAllText(dbConfigPath, JsonConvert.SerializeObject(new DatabaseModel(), Formatting.Indented));
                 return JsonConvert.DeserializeObject<DatabaseModel>(File.ReadAllText(dbConfigPath));
             }
         }
+
         public void Initialize()
         {
-            var DBName = DbConfig.DatabaseName; 
+            var DBName = DbConfig.DatabaseName;
             if (Process.GetProcesses().FirstOrDefault(x => x.ProcessName == "Raven.Server") == null)
+            {
                 PrettyConsole.Log(LogSeverity.Error, "Database", "Please make sure RavenDB is running.");
+                Console.ReadLine();
+                Environment.Exit(0);
+            }
+                
 
             _store = new Lazy<IDocumentStore>(
-                    () => new DocumentStore { Database = DbConfig.DatabaseName, Urls = new[] { DbConfig.DatabaseUrl } }.Initialize(),
-                    true).Value;
+                () => new DocumentStore {Database = DbConfig.DatabaseName, Urls = new[] {DbConfig.DatabaseUrl}}
+                    .Initialize(),
+                true).Value;
             if (_store == null)
                 PrettyConsole.Log(LogSeverity.Error, "Database", "Failed to build document store.");
-
 
 
             if (_store.Maintenance.Server.Send(new GetDatabaseNamesOperation(0, 5)).All(x => x != DBName))
                 _store.Maintenance.Server.Send(new CreateDatabaseOperation(new DatabaseRecord(DBName)));
 
             _store.AggressivelyCacheFor(TimeSpan.FromMinutes(30));
-
 
 
             using (var session = _store.OpenSession())
@@ -63,10 +72,17 @@ namespace ArcadesBot
                 var prefix = Console.ReadLine();
                 var model = new ConfigModel
                 {
-                    Prefix = prefix,
+                    Prefix = prefix.Trim(),
                     Blacklist = new List<ulong>(),
                     Namespaces = new List<string>(),
-                    ApiKeys = new Dictionary<string, string>{ { "Giphy", "dc6zaTOxFJmzC" }, { "Google", "" }, { "Discord", token }, { "Imgur", "" }, { "Cleverbot", "" } }
+                    ApiKeys = new Dictionary<string, string>
+                    {
+                        {"Giphy", "dc6zaTOxFJmzC"},
+                        {"Google", ""},
+                        {"Discord", token.Trim()},
+                        {"Imgur", ""},
+                        {"Cleverbot", ""}
+                    }
                 };
                 var id = "Config";
                 Create<ConfigModel>(ref id, model);
@@ -75,16 +91,13 @@ namespace ArcadesBot
 
         public T Create<T>(ref string id, object data)
         {
-            var returnValue = (T)data;
+            var returnValue = (T) data;
             using (var session = _store.OpenSession(_store.Database))
             {
-                if (session.Advanced.Exists($"{id}") && ulong.TryParse(id, out _))
-                {
-                    return returnValue;
-                }
-                while (session.Advanced.Exists($"{id}") )
+                if (session.Advanced.Exists($"{id}") && ulong.TryParse(id, out _)) return returnValue;
+                while (session.Advanced.Exists($"{id}"))
                     id = Guid.NewGuid().ToString();
-                session.Store((T)data, $"{id}");
+                session.Store((T) data, $"{id}");
                 PrettyConsole.Log(LogSeverity.Info, "Database", $"Added {typeof(T).Name} with {id} id.");
 
                 session.SaveChanges();
@@ -107,6 +120,7 @@ namespace ArcadesBot
 
             return returnValue;
         }
+
         public List<T> Query<T>()
         {
             List<T> returnValue;
@@ -117,6 +131,7 @@ namespace ArcadesBot
 
             return returnValue;
         }
+
         public void Delete<T>(object id)
         {
             using (var session = _store.OpenSession(_store.Database))
@@ -128,15 +143,16 @@ namespace ArcadesBot
                 session.Dispose();
             }
         }
+
         public void Update<T>(object id, object data)
         {
             using (var session = _store.OpenSession())
             {
-                session.Store((T)data, $"{id}");
+                session.Store((T) data, $"{id}");
                 session.SaveChanges();
             }
+
             PrettyConsole.Log(LogSeverity.Info, "Database", $"Updated {typeof(T).Name} with {id} id.");
         }
-
     }
 }

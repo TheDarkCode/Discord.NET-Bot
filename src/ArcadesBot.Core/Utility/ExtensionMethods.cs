@@ -1,6 +1,6 @@
-﻿using Discord;
-using System;
+﻿using System;
 using System.Linq;
+using Discord;
 
 namespace ArcadesBot
 {
@@ -8,20 +8,23 @@ namespace ArcadesBot
     {
         public static string FirstCharToUpper(this string input)
         {
-            if (String.IsNullOrEmpty(input))
+            if (string.IsNullOrEmpty(input))
                 throw new ArgumentException("ARGH!");
             return input.First().ToString().ToUpper() + input.Substring(1);
         }
+
         public static EmbedBuilder WithErrorColor(this EmbedBuilder builder)
         {
             builder.Color = Color.DarkRed;
             return builder;
         }
+
         public static EmbedBuilder WithInfoColor(this EmbedBuilder builder)
         {
             builder.Color = Color.DarkGrey;
             return builder;
         }
+
         public static EmbedBuilder WithSuccessColor(this EmbedBuilder builder)
         {
             builder.Color = Color.DarkBlue;

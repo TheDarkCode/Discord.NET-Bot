@@ -1,16 +1,15 @@
-﻿using Discord;
-using Raven.Client.Documents;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 
 namespace ArcadesBot
 {
     public class ChessStatsHandler
     {
-        private DatabaseHandler _database { get; }
         public ChessStatsHandler(DatabaseHandler database)
-            => _database = database;
+        {
+            _database = database;
+        }
+
+        private DatabaseHandler _database { get; }
 
         public string AddStat(ChessMatchModel chessMatch)
         {
@@ -19,12 +18,12 @@ namespace ArcadesBot
             {
                 Id = id,
                 GuildId = chessMatch.GuildId,
-                Participants = new[] { chessMatch.ChallengerId, chessMatch.ChallengeeId },
+                Participants = new[] {chessMatch.ChallengerId, chessMatch.ChallengeeId},
                 CreatedBy = chessMatch.ChallengerId,
                 Winner = chessMatch.Winner,
                 EndBy = chessMatch.EndBy,
                 EndDate = DateTime.Now,
-                MoveCount = (ulong)chessMatch.HistoryList.Count
+                MoveCount = (ulong) chessMatch.HistoryList.Count
             }).Id;
         }
     }

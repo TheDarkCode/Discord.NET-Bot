@@ -1,5 +1,5 @@
-﻿using ChessDotNet;
-using System;
+﻿using System;
+using ChessDotNet;
 
 namespace ArcadesBot
 {

@@ -1,11 +1,7 @@
-﻿using ChessDotNet;
-using Discord;
-using Discord.WebSocket;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
-using System.Threading.Tasks;
+using Discord;
 
 namespace ArcadesBot
 {
@@ -16,32 +12,36 @@ namespace ArcadesBot
 
         private ChessHandler _chessHandler { get; }
 
-        public List<ChessMatchStatsModel> Stats 
+        public List<ChessMatchStatsModel> Stats
             => _chessHandler.Stats;
 
-        public List<ChessMatchStatsModel> GetStatsFromUser(ulong userId, ulong guildId)
+        public List<ChessMatchStatsModel> GetStatsFromUser(ulong userId, ulong guildId) 
             => Stats.Where(x => x.Participants.Contains(userId) && x.GuildId == guildId).ToList();
 
         public ChessChallengeModel GetChallenge(ulong guildId, ulong channelId, ulong invokerId, bool overRide = false)
         {
             if (overRide)
-                return _chessHandler.Challenges.Where(x => x.GuildId == guildId && x.ChannelId == channelId && (x.ChallengeeId == invokerId)).OrderByDescending(x => x.TimeoutDate).FirstOrDefault();
-            else
-                return _chessHandler.Challenges.Where(x => x.GuildId == guildId && x.ChannelId == channelId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId)).OrderByDescending(x => x.TimeoutDate).FirstOrDefault();
+                return _chessHandler.Challenges
+                    .Where(x => x.GuildId == guildId && x.ChannelId == channelId && x.ChallengeeId == invokerId)
+                    .OrderByDescending(x => x.TimeoutDate).FirstOrDefault();
+            return _chessHandler.Challenges
+                .Where(x => x.GuildId == guildId && x.ChannelId == channelId &&
+                            (x.ChallengeeId == invokerId || x.ChallengerId == invokerId))
+                .OrderByDescending(x => x.TimeoutDate).FirstOrDefault();
         }
-            
-
-        public bool CheckPlayerInMatch(ulong guildId, ulong invokerId)
-            =>  _chessHandler.Matches.Any(x => x.GuildId == guildId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId) && x.Winner == 1);
-
-        public ChessMatchModel GetMatch(ulong guildId, ulong channelId, ulong invokerId)
-            =>  _chessHandler.Matches.FirstOrDefault(x => x.GuildId == guildId && x.ChannelId == channelId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId) && x.Winner == 1);
-
-        public ChessMatchModel GetMatchByStatId(string id)
-            =>  _chessHandler.Matches.FirstOrDefault(x => x.IdOfStat == id);
 
 
-        public ChessChallengeModel GetChallenge(string id)
+        public bool CheckPlayerInMatch(ulong guildId, ulong invokerId) 
+            => _chessHandler.Matches.Any(x => x.GuildId == guildId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId) && x.Winner == 1);
+
+        public ChessMatchModel GetMatch(ulong guildId, ulong channelId, ulong invokerId) 
+            => _chessHandler.Matches.FirstOrDefault(x => x.GuildId == guildId && x.ChannelId == channelId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId) && x.Winner == 1);
+
+        public ChessMatchModel GetMatchByStatId(string id) 
+            => _chessHandler.Matches.FirstOrDefault(x => x.IdOfStat == id);
+
+
+        public ChessChallengeModel GetChallenge(string id) 
             => _chessHandler.Challenges.FirstOrDefault(x => x.Id == id);
 
         public ChessChallengeModel CreateChallenge(ulong guildId, ulong channelId, IUser challenger, IUser challengee)
@@ -73,6 +73,10 @@ namespace ArcadesBot
                     match.Winner = 0;
                     match.EndBy = Cause.Stalemate;
                     break;
+                case Cause.OnGoing:
+                    break;
+                case Cause.Resign:
+                    break;
             }
 
             _chessHandler.UpdateMatch(match);
@@ -82,16 +86,16 @@ namespace ArcadesBot
         {
             challenge.Accepted = true;
             _chessHandler.UpdateChallenge(challenge);
-            _chessHandler.AddMatch(challenge.GuildId, challenge.ChannelId, challenge.ChallengerId, challenge.ChallengeeId, whiteUrl, blackUrl);
+            _chessHandler.AddMatch(challenge.GuildId, challenge.ChannelId, challenge.ChallengerId,
+                challenge.ChallengeeId, whiteUrl, blackUrl);
             return GetMatch(challenge.GuildId, challenge.ChannelId, challenge.ChallengerId);
         }
 
         public ulong Resign(ulong guildId, ulong channelId, ulong invokerId)
         {
-
             var chessMatch = GetMatch(guildId, channelId, invokerId);
-            chessMatch.Winner = chessMatch.ChallengeeId == invokerId 
-                ? chessMatch.ChallengerId 
+            chessMatch.Winner = chessMatch.ChallengeeId == invokerId
+                ? chessMatch.ChallengerId
                 : chessMatch.ChallengeeId;
             chessMatch.EndBy = Cause.Resign;
 

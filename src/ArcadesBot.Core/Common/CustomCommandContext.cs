@@ -1,17 +1,14 @@
-﻿using Discord;
+﻿using System;
+using System.Net.Http;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
-using Raven.Client.Documents;
-using Raven.Client.Documents.Session;
-using System;
-using System.Net.Http;
 
 namespace ArcadesBot
 {
     public class CustomCommandContext : ICommandContext
     {
-
         public CustomCommandContext(DiscordSocketClient client, SocketUserMessage msg, IServiceProvider provider)
         {
             Client = client;
