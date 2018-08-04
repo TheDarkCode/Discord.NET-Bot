@@ -2,12 +2,11 @@
 using Discord.Commands;
 using System;
 using System.Diagnostics;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ArcadesBot.Modules
 {
-    
+
     [Group("info"), Name("Info")]
     [Summary("")]
     public class InfoModule : Base

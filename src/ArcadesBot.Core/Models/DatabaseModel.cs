@@ -1,5 +1,5 @@
-﻿using System.Security.Cryptography.X509Certificates;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
+using System.Security.Cryptography.X509Certificates;
 
 namespace ArcadesBot
 {

@@ -1,10 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ArcadesBot
@@ -24,7 +21,7 @@ namespace ArcadesBot
         }
 
         [Command, Name("getTag"), Summary("Gets a tag with the given name.")]
-        public async Task GetTagAsync([Summary("Name of the tag you want to retrieve from the database")]string tagName)
+        public async Task GetTagAsync([Summary("Name of the tag you want to retrieve from the database"), Remainder]string tagName)
         {
             var tag = Tags.FirstOrDefault(x => x.TagName == tagName);
             if(tag == null)
@@ -36,7 +33,7 @@ namespace ArcadesBot
             await ReplyEmbedAsync($"{tag.Content}", document: DocumentType.Server);
         }
 
-        [Command("create", RunMode = RunMode.Async), Alias("new", "add"), Priority(10), Summary("Creates tag with content .")]
+        [Command("create", RunMode = RunMode.Async), Alias("new", "add", "c"), Priority(10), Summary("Creates tag with content .")]
         public async Task CreateAsync([Summary("The name of the tag")]string name, [Remainder, Summary("The content of the tag")]string content)
         {
             if (await TagExists(name))
@@ -51,7 +48,7 @@ namespace ArcadesBot
             await ReplyEmbedAsync($"Tag `{name}` has been created.", document: DocumentType.Server);
         }
 
-        [Command("delete", RunMode = RunMode.Async), Alias("remove"), Priority(10), Summary("Deletes given tag")]
+        [Command("delete", RunMode = RunMode.Async), Alias("remove", "r"), Priority(10), Summary("Deletes given tag")]
         public async Task DeleteAsync([Summary("The name of the tag")]TagModel tag)
         {
             if (!await OwnerShipCheck(tag))
@@ -70,6 +67,30 @@ namespace ArcadesBot
             tag.Aliasses.Add(aliasName);
             Tags.Add(tag);
             await ReplyEmbedAsync($"Tag `{tag.TagName}` has been deleted.", document: DocumentType.Server);
+        }
+
+        [Command("info", RunMode = RunMode.Async), Alias("i"), Priority(10), Summary("Get information about given tag")]
+        public async Task GetInfoAsync([Summary("The name of the tag"), Remainder] TagModel tag)
+        {
+            var tagIndex = Tags.OrderByDescending(x => x.Uses).Select((item, index) => new { item, index });
+            var tagWithIndex = tagIndex.FirstOrDefault(x => x.item.TagName == tag.TagName);
+            var embed = new EmbedBuilder().WithSuccessColor();
+            var str = "";
+            foreach (var test in tag.Aliasses)
+            {
+                str += test + ", ";
+            }
+
+            var user = Context.Client.GetUser(tag.OwnerId)?.Mention;
+            str = str.Substring(0, str.Length - 2);
+            embed.WithDescription($"**{tag.TagName}**");
+            embed.AddField("Owner", user, true);
+            embed.AddField("Uses", tag.Uses, true);
+            embed.AddField("Rank", tagWithIndex.index + 1, true);
+            embed.WithFooter(str);
+            
+
+            await ReplyEmbedAsync(embed: embed);
         }
 
 

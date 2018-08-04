@@ -2,7 +2,6 @@
 using Google.Apis.YouTube.v3;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord;
 using Youtube = Google.Apis.YouTube.v3.Data;
 
 

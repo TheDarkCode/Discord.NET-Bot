@@ -1,7 +1,7 @@
-﻿using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace ArcadesBot
 {

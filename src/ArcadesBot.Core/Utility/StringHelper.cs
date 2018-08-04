@@ -1,10 +1,10 @@
-﻿using System;
+﻿using Discord;
+using Discord.WebSocket;
+using System;
 using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using Discord;
-using Discord.WebSocket;
 
 namespace ArcadesBot
 {

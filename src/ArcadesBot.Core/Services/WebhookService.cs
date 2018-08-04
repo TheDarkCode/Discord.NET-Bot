@@ -1,12 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using Discord;
+using Discord.Rest;
+using Discord.Webhook;
+using Discord.WebSocket;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Discord;
-using Discord.Rest;
-using Discord.Webhook;
-using Discord.WebSocket;
 
 namespace ArcadesBot
 {

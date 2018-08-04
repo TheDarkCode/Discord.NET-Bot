@@ -1,11 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
-using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
-using System;
-using System.Collections.Generic;
 
 namespace ArcadesBot
 {

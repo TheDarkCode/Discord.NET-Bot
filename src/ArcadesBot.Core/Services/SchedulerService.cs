@@ -1,7 +1,7 @@
-﻿using System;
+﻿using FluentScheduler;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentScheduler;
 
 namespace ArcadesBot
 {

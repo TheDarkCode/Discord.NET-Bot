@@ -1,14 +1,16 @@
-﻿using System;
+﻿using ChessDotNet;
+using Discord;
+using SixLabors.Fonts;
+using SixLabors.ImageSharp;
+using SixLabors.Primitives;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using ChessDotNet;
-using Discord;
-using SixLabors.ImageSharp;
-using SixLabors.Primitives;
 using File = ChessDotNet.File;
 using Image = SixLabors.ImageSharp.Image;
 
@@ -49,7 +51,7 @@ namespace ArcadesBot
                 ? new ChessGame(enumerable, true)
                 : new ChessGame();
             var otherPlayer = game.WhoseTurn == Player.White ? Player.Black : Player.White;
-            var linkFromMatchAsync = await GetImageLinkFromMatchAsync(match);
+            var linkFromMatchAsync = await DrawBoard(match);
             return new ChessMatchStatusModel
             {
                 Match = match,
@@ -76,10 +78,8 @@ namespace ArcadesBot
             return challenge;
         }
 
-        public ulong Resign(ulong guildId, ulong channelId, IUser player)
-        {
-            return _chessHelper.Resign(guildId, channelId, player.Id);
-        }
+        public ulong Resign(ulong guildId, ulong channelId, IUser player) 
+            => _chessHelper.Resign(guildId, channelId, player.Id);
 
         public ChessMatchModel AcceptChallenge(CustomCommandContext context, IUser player)
         {
@@ -163,7 +163,9 @@ namespace ArcadesBot
             var chessMove = new ChessMoveModel
             {
                 Move = move,
-                MoveDate = DateTime.Now
+                MovedfenChar = pieceChar,
+                MoveDate = DateTime.Now,
+                Player = whoseTurn
             };
             game.ApplyMove(move, true);
             match.HistoryList.Add(chessMove);
@@ -174,7 +176,7 @@ namespace ArcadesBot
             else if (game.IsCheckmated(otherPlayer))
                 endCause = Cause.Checkmate;
 
-            var imageLinkValues = await GetImageLinkFromMatchAsync(match);
+            var imageLinkValues = await DrawBoard(match);
             var status = new ChessMatchStatusModel
             {
                 Game = game,
@@ -199,7 +201,7 @@ namespace ArcadesBot
             processor.DrawImage(image, new Size(50, 50), new Point(x * 50 + 117, y * 50 + 19), new GraphicsOptions());
         }
 
-        private async Task<ImageLinkModel> GetImageLinkFromMatchAsync(ChessMatchModel match)
+        private async Task<ImageLinkModel> DrawBoard(ChessMatchModel match)
         {
             await Task.Run(async () =>
             {
@@ -243,15 +245,14 @@ namespace ArcadesBot
                                                  rankToRowMap[lastMove.Move.NewPosition.Rank] == y))
                             DrawImage(processor, "yellow_square", x, y);
                         var piece = boardPieces[y][x];
-                        if (piece != null)
-                        {
-                            if (piece.GetFenCharacter().ToString().ToUpper() == "K" && game.IsInCheck(piece.Owner))
-                                DrawImage(processor, "red_square", x, y);
-                            var str = "white";
-                            if (new char[6] {'r', 'n', 'b', 'q', 'k', 'p'}.Contains(piece.GetFenCharacter()))
-                                str = "black";
-                            DrawImage(processor, string.Format("{0}_{1}", str, piece.GetFenCharacter()), x, y);
-                        }
+                        if (piece == null)
+                                continue;
+                        if (piece.GetFenCharacter().ToString().ToUpper() == "K" && game.IsInCheck(piece.Owner))
+                            DrawImage(processor, "red_square", x, y);
+                        var str = "white";
+                        if (new[] {'r', 'n', 'b', 'q', 'k', 'p'}.Contains(piece.GetFenCharacter()))
+                            str = "black";
+                        DrawImage(processor, string.Format("{0}_{1}", str, piece.GetFenCharacter()), x, y);
                     }
 
                     var blackPawnCount = game.PiecesOnBoard.Count(x =>
@@ -420,10 +421,58 @@ namespace ArcadesBot
                     processor.DrawImage(whiteAvatarData, new Size(50, 50), new Point(541, 370), new GraphicsOptions());
                     processor.DrawImage(blackAvatarData, new Size(50, 50), new Point(43, 18), new GraphicsOptions());
 
+                    var table = Image.Load(_assetService.GetImagePath("table.png"));
+                    processor.DrawImage(table, new Size(108, 148), new Point(596, 18), new GraphicsOptions());
+
+                    if (!SystemFonts.TryFind("Arial", out var font))
+                    {
+                        PrettyConsole.Log(LogSeverity.Critical, "Image drawing", "Cannot find font 'Arial' install Arial as a font and try again");
+                        Console.ReadLine();
+                        Environment.Exit(0);
+                    }
+
+                    processor.DrawText("Last 5 moves", font.CreateFont(12, FontStyle.Bold), Rgba32.Black, new PointF(616, 19));
+                    processor.DrawText("White", font.CreateFont(12, FontStyle.Bold), Rgba32.Black, new PointF(606, 42));
+                    processor.DrawText("Black", font.CreateFont(12, FontStyle.Bold), Rgba32.Black, new PointF(660, 42));
+                    var blackMoves = match.HistoryList.OrderByDescending(x => x.MoveDate).Where(x => x.Player == Player.Black).ToList();
+                    var whiteMoves = match.HistoryList.OrderByDescending(x => x.MoveDate).Where(x => x.Player == Player.White).ToList();
+
+                    for (var i = 0; i < blackMoves.Count && i < 5; i++)
+                    {
+                        var safeguard = i;
+                        var player = blackMoves[i].Player.ToString().ToLower();
+                        var file = blackMoves[i].Move.NewPosition.File;
+                        var rank = blackMoves[i].Move.NewPosition.Rank;
+                        var fenChar = blackMoves[i].MovedfenChar;
+                        var image = Image.Load(_assetService.GetImagePath($"{player}_{fenChar}.png"));
+                        if (blackMoves.Count != whiteMoves.Count)
+                            safeguard++;
+                        if (whiteMoves.Count > 5 && safeguard == 5)
+                            continue;
+                        processor.DrawImage(image, new Size(12, 12), new Point(660, 65 + safeguard * 21), new GraphicsOptions());
+                        
+                        var str = ConstructString(file, rank);
+                        processor.DrawText($"{str}", font.CreateFont(12, FontStyle.Bold), Rgba32.Black, new PointF(672, 63 + safeguard * 21));
+                    }
+                    for (var i = 0; i < whiteMoves.Count && i < 5; i++)
+                    {
+                        var player = whiteMoves[i].Player.ToString().ToLower();
+                        var file = whiteMoves[i].Move.NewPosition.File;
+                        var rank = whiteMoves[i].Move.NewPosition.Rank;
+                        var fenChar = whiteMoves[i].MovedfenChar;
+                        var image = Image.Load(_assetService.GetImagePath($"{player}_{fenChar}.png"));
+                        processor.DrawImage(image, new Size(12, 12), new Point(606, 65 + i * 21), new GraphicsOptions());
+
+                        var str = ConstructString(file, rank);
+                        processor.DrawText($"{str}", font.CreateFont(12, FontStyle.Bold), Rgba32.Black, new PointF(618, 63 + i * 21));
+
+                    }
+
                     #endregion
                 });
-                board.Save(
-                    $"{Directory.GetCurrentDirectory()}\\Chessboards\\board{match.Id}-{match.HistoryList.Count}.png");
+                if (!Directory.Exists($"{Directory.GetCurrentDirectory()}\\Chessboards\\"))
+                    Directory.CreateDirectory($"{Directory.GetCurrentDirectory()}\\Chessboards\\");
+                board.Save($"{Directory.GetCurrentDirectory()}\\Chessboards\\board{match.Id}-{match.HistoryList.Count}.png");
             });
 
             var nextPlayer = WhoseTurn(new ChessMatchStatusModel
@@ -453,6 +502,12 @@ namespace ArcadesBot
             onTimeout?.Invoke(challenge);
         }
 
+        private string ConstructString(File file, int rank)
+        {
+            var str = new StringBuilder();
+            str.Append(file.ToString() + rank);
+            return str.ToString();
+        }
         #endregion
     }
 }

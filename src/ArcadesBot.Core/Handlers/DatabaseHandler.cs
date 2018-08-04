@@ -39,7 +39,7 @@ namespace ArcadesBot
 
         public void Initialize()
         {
-            var DBName = DbConfig.DatabaseName;
+            var dbName = DbConfig.DatabaseName;
             if (Process.GetProcesses().FirstOrDefault(x => x.ProcessName == "Raven.Server") == null)
             {
                 PrettyConsole.Log(LogSeverity.Error, "Database", "Please make sure RavenDB is running.");
@@ -56,8 +56,8 @@ namespace ArcadesBot
                 PrettyConsole.Log(LogSeverity.Error, "Database", "Failed to build document store.");
 
 
-            if (_store.Maintenance.Server.Send(new GetDatabaseNamesOperation(0, 5)).All(x => x != DBName))
-                _store.Maintenance.Server.Send(new CreateDatabaseOperation(new DatabaseRecord(DBName)));
+            if (_store.Maintenance.Server.Send(new GetDatabaseNamesOperation(0, 5)).All(x => x != dbName))
+                _store.Maintenance.Server.Send(new CreateDatabaseOperation(new DatabaseRecord(dbName)));
 
             _store.AggressivelyCacheFor(TimeSpan.FromMinutes(30));
 
