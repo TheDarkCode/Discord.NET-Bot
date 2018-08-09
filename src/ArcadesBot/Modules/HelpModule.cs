@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ArcadesBot.Modules
 {
-    [Group("help"), Name("Help")]
+    //[Group("help"), Summary("Help")]
     public class HelpModule : Base
     {
         private CommandService _commands { get; }
@@ -19,7 +19,7 @@ namespace ArcadesBot.Modules
             _provider = provider;
         }
 
-        [Command]
+        [Command("?"), Alias("help")]
         public async Task HelpAsync()
         {
             var prefix = GetPrefix(Context) ?? $"@{Context.Client.CurrentUser.Username} ";
@@ -27,7 +27,7 @@ namespace ArcadesBot.Modules
 
             var embed = new EmbedBuilder()
                 .WithInfoColor()
-                .WithFooter(x => x.Text = $"Type `{prefix}help <module>` for more information");
+                .WithFooter(x => x.Text = $"Type `{prefix}? <module>` for more information");
 
             foreach (var module in modules)
             {
@@ -35,11 +35,10 @@ namespace ArcadesBot.Modules
                 foreach (var command in module.Commands)
                 {
                     var result = await command.CheckPreconditionsAsync(Context, _provider);
-                    if (result.IsSuccess)
-                    {
-                        success = true;
-                        break;
-                    }
+                    if (!result.IsSuccess)
+                        continue;
+                    success = true;
+                    break;
                 }
 
                 if (!success)
@@ -51,53 +50,53 @@ namespace ArcadesBot.Modules
             await ReplyEmbedAsync(embed: embed);
         }
 
-        //[Command]
-        //public async Task HelpAsync([Remainder]string moduleName)
-        //{
-        //    var prefix = GetPrefix(Context) ?? $"@{Context.Client.CurrentUser.Username} ";
-        //    var module = _commands.Modules.FirstOrDefault(x => x.Name.ToLower() == moduleName.ToLower());
+        [Command("?"), Alias("help"), Priority(10)]
+        public async Task HelpAsync([Remainder]string moduleName)
+        {
+            var prefix = GetPrefix(Context) ?? $"@{Context.Client.CurrentUser.Username} ";
+            var module = _commands.Modules.FirstOrDefault(x => x.Name.ToLower() == moduleName.ToLower());
 
-        //    if (module == null)
-        //    {
-        //        try
-        //        {
-        //            if (moduleName.Substring(0, prefix.Length) == prefix)
-        //            {
-        //                var commandName = moduleName.Substring(prefix.Length);
-        //                var command = _commands.Commands.FirstOrDefault(x => x.Aliases.Any(z => string.Equals(z, commandName, StringComparison.CurrentCultureIgnoreCase)));
-        //                await HelpAsync(command.Module.Name, command);
-        //                return;
-        //            }
-        //        }
-        //        catch(ArgumentOutOfRangeException) {}
-        //        await ReplyEmbedAsync($"The module `{moduleName}` does not exist.");
-        //        return;
-        //    }
+            if (module == null)
+            {
+                //try
+                //{
+                //    if (moduleName.Substring(0, prefix.Length) == prefix)
+                //    {
+                //        var commandName = moduleName.Substring(prefix.Length);
+                //        var command = _commands.Commands.FirstOrDefault(x => x.Aliases.Any(z => string.Equals(z, commandName, StringComparison.CurrentCultureIgnoreCase)));
+                //        await HelpAsync(command.Module.Name, command);
+                //        return;
+                //    }
+                //}
+                //catch (ArgumentOutOfRangeException) { }
+                await ReplyEmbedAsync($"The module `{moduleName}` does not exist.");
+                return;
+            }
 
 
-        //    var commands = module.Commands.Where(x => !string.IsNullOrWhiteSpace(x.Summary))
-        //                         .GroupBy(x => x.Name)
-        //                         .Select(x => x.First());
+            var commands = module.Commands.Where(x => !string.IsNullOrWhiteSpace(x.Summary))
+                                 .GroupBy(x => x.Name)
+                                 .Select(x => x.First());
 
-        //    if (!commands.Any())
-        //    {
-        //        await ReplyEmbedAsync($"The module `{module.Name}` has no available commands :(");
-        //        return;
-        //    }
+            if (!commands.Any())
+            {
+                await ReplyEmbedAsync($"The module `{module.Name}` has no available commands :(");
+                return;
+            }
 
-        //    var embed = new EmbedBuilder()
-        //        .WithInfoColor()
-        //        .WithFooter(x => x.Text = $"Type `{prefix}help {prefix}<command>` for more information");
+            var embed = new EmbedBuilder()
+                .WithInfoColor();
+                //.WithFooter(x => x.Text = $"Type `{prefix}help {prefix}<command>` for more information");
 
-        //    foreach (var command in commands)
-        //    {
-        //        var result = await command.CheckPreconditionsAsync(Context, _provider);
-        //        if (result.IsSuccess)
-        //            embed.AddField(prefix + command.Aliases.First(), command.Summary);
-        //    }
+            foreach (var command in commands)
+            {
+                var result = await command.CheckPreconditionsAsync(Context, _provider);
+                if (result.IsSuccess)
+                    embed.AddField(prefix + command.Aliases.First(), command.Summary);
+            }
 
-        //    await ReplyEmbedAsync(embed: embed);
-        //}
+            await ReplyEmbedAsync(embed: embed);
+        }
 
         //private async Task HelpAsync(string moduleName, CommandInfo commandInfo)
         //{
@@ -148,7 +147,7 @@ namespace ArcadesBot.Modules
 
         //    await ReplyEmbedAsync(embed: embed);
         //}
-        private string GetPrefix(CustomCommandContext context)
+        private static string GetPrefix(CustomCommandContext context)
             => context.Server.Prefix ?? null;
     }
 }

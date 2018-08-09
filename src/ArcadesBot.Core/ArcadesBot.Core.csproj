@@ -3,7 +3,13 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <RootNamespace>ArcadesBot</RootNamespace>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
+    <Authors>Arcade116 on Github</Authors>
+    <Product />
+    <RepositoryUrl>https://github.com/Arcade116/Discord.NET-Bot</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Arcade116/Discord.NET-Bot</PackageProjectUrl>
+    <RepositoryType>Open Source</RepositoryType>
+    <PackageLicenseUrl>https://github.com/Arcade116/Discord.NET-Bot/blob/master/LICENSE</PackageLicenseUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

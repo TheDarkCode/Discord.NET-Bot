@@ -101,8 +101,7 @@ namespace ArcadesBot
             return _chessHelper.AcceptChallenge(challenge, blackUrl, whiteUrl);
         }
 
-        public async Task<ChessMatchStatusModel> Move(Stream stream, ulong guildId, ulong channelId, IUser player,
-            string rawMove)
+        public async Task<ChessMatchStatusModel> Move(ulong guildId, ulong channelId, IUser player, string rawMove)
         {
             var rankToRowMap = new Dictionary<int, int>
             {
@@ -197,7 +196,7 @@ namespace ArcadesBot
 
         private void DrawImage(IImageProcessingContext<Rgba32> processor, string name, int x, int y)
         {
-            var image = Image.Load(_assetService.GetImagePath($"{name}.png"));
+            var image = Image.Load(_assetService.GetImagePath("Chess", $"{ name}.png"));
             processor.DrawImage(image, new Size(50, 50), new Point(x * 50 + 117, y * 50 + 19), new GraphicsOptions());
         }
 
@@ -205,10 +204,10 @@ namespace ArcadesBot
         {
             await Task.Run(async () =>
             {
-                var board = Image.Load(_assetService.GetImagePath("board.png"));
+                var board = Image.Load(_assetService.GetImagePath("Chess", "board.png"));
 
                 var httpClient = new HttpClient();
-                var turnIndicator = Image.Load(_assetService.GetImagePath("turn_indicator.png"));
+                var turnIndicator = Image.Load(_assetService.GetImagePath("Chess", "turn_indicator.png"));
                 var whiteAvatarData = Image.Load(await httpClient.GetByteArrayAsync(match.WhiteAvatarUrl));
                 var blackAvatarData = Image.Load(await httpClient.GetByteArrayAsync(match.BlackAvatarUrl));
                 httpClient.Dispose();
@@ -277,7 +276,7 @@ namespace ArcadesBot
                         x.GetFenCharacter() == 'Q' && x.Owner == Player.White && !x.IsPromotionResult);
                     var row = 1;
 
-                    var blackPawn = Image.Load(_assetService.GetImagePath("black_p.png"));
+                    var blackPawn = Image.Load(_assetService.GetImagePath("Chess", "black_p.png"));
 
                     for (var index = 8; index > blackPawnCount; --index)
                         if (index % 2 == 0)
@@ -294,7 +293,7 @@ namespace ArcadesBot
 
                     row = 8;
 
-                    var image2 = Image.Load(_assetService.GetImagePath("white_P.png"));
+                    var image2 = Image.Load(_assetService.GetImagePath("Chess", "white_P.png"));
                     for (var index = 8; index > whitePawnCount; --index)
                         if (index % 2 == 0)
                         {
@@ -310,7 +309,7 @@ namespace ArcadesBot
 
                     row = 5;
 
-                    var image3 = Image.Load(_assetService.GetImagePath("black_r.png"));
+                    var image3 = Image.Load(_assetService.GetImagePath("Chess", "black_r.png"));
                     for (var index = 2; index > blackRookCount; --index)
                         if (index % 2 == 0)
                         {
@@ -326,7 +325,7 @@ namespace ArcadesBot
 
                     row = 4;
 
-                    var whiteRook = Image.Load(_assetService.GetImagePath("white_R.png"));
+                    var whiteRook = Image.Load(_assetService.GetImagePath("Chess", "white_R.png"));
                     for (var index = 2; index > whiteRookCount; --index)
                         if (index % 2 == 0)
                         {
@@ -342,7 +341,7 @@ namespace ArcadesBot
 
                     row = 6;
 
-                    var blackKnight = Image.Load(_assetService.GetImagePath("black_n.png"));
+                    var blackKnight = Image.Load(_assetService.GetImagePath("Chess", "black_n.png"));
                     for (var index = 2; index > blackKnightCount; --index)
                         if (index % 2 == 0)
                         {
@@ -358,7 +357,7 @@ namespace ArcadesBot
 
                     row = 3;
 
-                    var whiteKnight = Image.Load(_assetService.GetImagePath("white_N.png"));
+                    var whiteKnight = Image.Load(_assetService.GetImagePath("Chess", "white_N.png"));
                     for (var i = 2; i > whiteKnightCount; --i)
                         if (i % 2 == 0)
                         {
@@ -374,7 +373,7 @@ namespace ArcadesBot
 
                     row = 7;
 
-                    var blackBishop = Image.Load(_assetService.GetImagePath("black_b.png"));
+                    var blackBishop = Image.Load(_assetService.GetImagePath("Chess", "black_b.png"));
                     for (var index = 2; index > blackBishopCount; --index)
                         if (index % 2 == 0)
                         {
@@ -390,7 +389,7 @@ namespace ArcadesBot
 
                     row = 2;
 
-                    var whiteBishop = Image.Load(_assetService.GetImagePath("white_B.png"));
+                    var whiteBishop = Image.Load(_assetService.GetImagePath("Chess", "white_B.png"));
                     for (var index = 2; index > whiteBishopCount; --index)
                         if (index % 2 == 0)
                         {
@@ -406,13 +405,13 @@ namespace ArcadesBot
 
                     row = 8;
 
-                    var blackQueen = Image.Load(_assetService.GetImagePath("black_q.png"));
+                    var blackQueen = Image.Load(_assetService.GetImagePath("Chess", "black_q.png"));
                     if (blackQueenCount == 0)
                         processor.DrawImage(blackQueen, new Size(30, 30), new Point(533, 16 + row * 30),
                             new GraphicsOptions());
                     row = 1;
 
-                    var whiteQueen = Image.Load(_assetService.GetImagePath("white_Q.png"));
+                    var whiteQueen = Image.Load(_assetService.GetImagePath("Chess", "white_Q.png"));
                     if (whiteQueenCount == 0)
                         processor.DrawImage(whiteQueen, new Size(30, 30), new Point(20, 125 + row * 30),
                             new GraphicsOptions());
@@ -421,7 +420,7 @@ namespace ArcadesBot
                     processor.DrawImage(whiteAvatarData, new Size(50, 50), new Point(541, 370), new GraphicsOptions());
                     processor.DrawImage(blackAvatarData, new Size(50, 50), new Point(43, 18), new GraphicsOptions());
 
-                    var table = Image.Load(_assetService.GetImagePath("table.png"));
+                    var table = Image.Load(_assetService.GetImagePath("Chess", "table.png"));
                     processor.DrawImage(table, new Size(108, 148), new Point(596, 18), new GraphicsOptions());
 
                     if (!SystemFonts.TryFind("Arial", out var font))
@@ -444,7 +443,7 @@ namespace ArcadesBot
                         var file = blackMoves[i].Move.NewPosition.File;
                         var rank = blackMoves[i].Move.NewPosition.Rank;
                         var fenChar = blackMoves[i].MovedfenChar;
-                        var image = Image.Load(_assetService.GetImagePath($"{player}_{fenChar}.png"));
+                        var image = Image.Load(_assetService.GetImagePath("Chess", $"{player}_{fenChar}.png"));
                         if (blackMoves.Count != whiteMoves.Count)
                             safeguard++;
                         if (whiteMoves.Count > 5 && safeguard == 5)
@@ -460,7 +459,7 @@ namespace ArcadesBot
                         var file = whiteMoves[i].Move.NewPosition.File;
                         var rank = whiteMoves[i].Move.NewPosition.Rank;
                         var fenChar = whiteMoves[i].MovedfenChar;
-                        var image = Image.Load(_assetService.GetImagePath($"{player}_{fenChar}.png"));
+                        var image = Image.Load(_assetService.GetImagePath("Chess", $"{player}_{fenChar}.png"));
                         processor.DrawImage(image, new Size(12, 12), new Point(606, 65 + i * 21), new GraphicsOptions());
 
                         var str = ConstructString(file, rank);

@@ -152,37 +152,34 @@ namespace ArcadesBot
             await Context.Channel.TriggerTypingAsync();
             try
             {
-                using (var stream = new MemoryStream())
+                var result = await _chessService.Move(Context.Guild.Id, Context.Channel.Id, Context.Message.Author, move);
+                if (result.Status != Cause.OnGoing)
                 {
-                    var result = await _chessService.Move(stream, Context.Guild.Id, Context.Channel.Id, Context.Message.Author, move);
-                    if (result.Status != Cause.OnGoing)
+                    var str = "The match is over.";
+                    if (result.WinnerId.HasValue)
                     {
-                        var str = "The match is over.";
-                        if (result.WinnerId.HasValue)
-                        {
-                            var user = Context.Guild.GetUser(result.WinnerId.Value);
-                            str += $" {user.Mention} has won the match";
-                        }
-                        if (result.IsCheckmated)
-                            str += " by checkmating";
-                        var embedBuilder = new EmbedBuilder()
-                            .WithSuccessColor()
-                            .WithImageUrl(result.ImageLink)
-                            .WithDescription(str);
-                        await SendFileAsync($"Chessboards/board{result.Match.Id}-{result.Match.HistoryList.Count}.png", embed: embedBuilder);
+                        var user = Context.Guild.GetUser(result.WinnerId.Value);
+                        str += $" {user.Mention} has won the match";
                     }
-                    else
-                    {
-                        var userId = _chessService.WhoseTurn(result);
-                        var str = $"Your move {Context.Guild.GetUser(userId).Mention}.";
-                        if (result.IsCheck)
-                            str += " Check!";
-                        var embedBuilder = new EmbedBuilder()
-                            .WithSuccessColor()
-                            .WithImageUrl(result.ImageLink)
-                            .WithDescription(str);
-                        await SendFileAsync($"Chessboards/board{result.Match.Id}-{result.Match.HistoryList.Count}.png", embed: embedBuilder);
-                    }
+                    if (result.IsCheckmated)
+                        str += " by checkmating";
+                    var embedBuilder = new EmbedBuilder()
+                        .WithSuccessColor()
+                        .WithImageUrl(result.ImageLink)
+                        .WithDescription(str);
+                    await SendFileAsync($"Chessboards/board{result.Match.Id}-{result.Match.HistoryList.Count}.png", embed: embedBuilder);
+                }
+                else
+                {
+                    var userId = _chessService.WhoseTurn(result);
+                    var str = $"Your move {Context.Guild.GetUser(userId).Mention}.";
+                    if (result.IsCheck)
+                        str += " Check!";
+                    var embedBuilder = new EmbedBuilder()
+                        .WithSuccessColor()
+                        .WithImageUrl(result.ImageLink)
+                        .WithDescription(str);
+                    await SendFileAsync($"Chessboards/board{result.Match.Id}-{result.Match.HistoryList.Count}.png", embed: embedBuilder);
                 }
             }
             catch (ChessException ex)

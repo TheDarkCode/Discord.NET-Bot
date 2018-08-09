@@ -54,9 +54,15 @@ namespace ArcadesBot
                 || msg.Author.IsBot || context.Server.BlackListedChannels.Contains(context.Channel.Id))
                 return;
 
-            if (!(msg.HasStringPrefix(context.Config.Prefix, ref argPos) || msg.HasStringPrefix(context.Server.Prefix, ref argPos) ||
-                msg.HasMentionPrefix(context.Client.CurrentUser, ref argPos)) || msg.Source != MessageSource.User)
+                
+            if (!(msg.HasStringPrefix(context.Server.Prefix, ref argPos) || msg.HasMentionPrefix(context.Client.CurrentUser, ref argPos)) 
+                || msg.Source != MessageSource.User)
                 return;
+            if (msg.Content == context.Server.Prefix)
+            {
+                await _commands.ExecuteAsync(context, "?", _provider);
+                return;
+            }
             var result = await _commands.ExecuteAsync(context, argPos, _provider, MultiMatchHandling.Best);
             var search = _commands.Search(context, argPos);
             var command = search.IsSuccess ? search.Commands.FirstOrDefault().Command : null;
