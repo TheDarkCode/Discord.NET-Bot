@@ -43,7 +43,7 @@ namespace ArcadesBot
         {
             foreach (var t in _cardsAsInt)
             {
-                var suit = (CardSuit)(t % 4);
+                var suit = (CardSuit)(t % 4 + 1);
                 var value = (CardValue)(t % 13 + 1);
                 _deckOfCards.Enqueue(new CardModel(_assetService, suit, value));
             }

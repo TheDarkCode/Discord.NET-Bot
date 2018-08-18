@@ -2,22 +2,15 @@
 {
     public class GuildHandler
     {
-        public GuildHandler(DatabaseHandler database)
-        {
-            _database = database;
-        }
+        public GuildHandler(DatabaseHandler database) => _database = database;
 
         private DatabaseHandler _database { get; }
 
-        public GuildModel GetGuild(ulong id)
-        {
-            return _database.Select<GuildModel>($"{id}");
-        }
+        public GuildModel GetGuild(ulong id) 
+            => _database.Select<GuildModel>($"{id}");
 
-        public void RemoveGuild(ulong id)
-        {
-            _database.Delete<GuildModel>(id);
-        }
+        public void RemoveGuild(ulong id) 
+            => _database.Delete<GuildModel>(id);
 
         public void AddGuild(ulong id)
         {

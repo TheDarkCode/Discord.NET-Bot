@@ -13,10 +13,8 @@ namespace ArcadesBot
 {
     public class DatabaseHandler
     {
-        public DatabaseHandler()
-        {
-            Initialize();
-        }
+        public DatabaseHandler() 
+            => Initialize();
 
         private IDocumentStore _store { get; set; }
 

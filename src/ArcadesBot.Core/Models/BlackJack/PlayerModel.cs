@@ -48,7 +48,7 @@ namespace ArcadesBot
                 }
             }
 
-            if (_hand.Count == 2 && ((_hand[0].Value == CardValue.Ace && (int)_hand[1].Value >= 10) || (_hand[1].Value == CardValue.Ace && (int)_hand[0].Value >= 10)))
+            if (_hand.Count == 2 && (_hand[0].Value == CardValue.Ace && (int)_hand[1].Value >= 10 || _hand[1].Value == CardValue.Ace && (int)_hand[0].Value >= 10))
             {
                 return 21;
             }
