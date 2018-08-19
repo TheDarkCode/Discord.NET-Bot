@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using System.Threading.Tasks;
+using SixLabors.ImageSharp;
+using SixLabors.Primitives;
 
 namespace ArcadesBot
 {
@@ -19,16 +23,6 @@ namespace ArcadesBot
         private readonly DeckModel _playingDeck;
         private readonly PlayerModel _player = new PlayerModel();
         private readonly PlayerModel _dealer = new PlayerModel();
-
-        public CardModel DealerVisibleCard
-            => _dealer.ShowHand()[0];
-
-        public CardModel DealerLastCard
-            => _dealer.ShowHand()[_dealer.ShowHand().Count - 1];
-
-        public List<CardModel> GetDealerCards()
-            => _dealer.ShowHand();
-
 
         public void DealFirstTwoCards()
         {
@@ -75,14 +69,41 @@ namespace ArcadesBot
 
         public string DisplayScores(bool fullDealerCards = false)
         {
-
-            var test = GetDealerScore();
+            var dealerScore = GetDealerScore();
             if (!fullDealerCards)
-                test = (int) DealerVisibleCard.Value;
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine(fullDealerCards ? $"Dealer has :{test}" : $"Dealer has :{test} but 1 card is hidden");
-            sb.AppendLine($"Player has :{_player.GetScore()}");
+                dealerScore = (int)_dealer.ShowHand()[0].Value;
+            var sb = new StringBuilder();
+            sb.AppendLine(fullDealerCards ? $"Dealer has : {dealerScore}" : $"Dealer has : {dealerScore} but 1 card is hidden");
+            sb.AppendLine($"Player has : {_player.GetScore()}");
             return sb.ToString();
+        }
+
+        public string CreateImageAsync(bool showFullDealerCards = false)
+        {
+            var playerCardsPaths = new List<string>();
+            foreach (var card in _player.ShowHand())
+                playerCardsPaths.Add(card.ImagePath);
+
+            var guid = Guid.NewGuid();
+            var board = Image.Load(_assetService.GetImagePath("Cards", "board.png"));
+
+            board.Mutate(processor =>
+            {
+                var playerCardCount = playerCardsPaths.Count;
+                var startWidth = ((board.Width / playerCardCount) / playerCardCount) - (playerCardCount * 10) / playerCardCount;
+
+                for (var i = 0; i < playerCardsPaths.Count; i++)
+                {
+                    var image = Image.Load(playerCardsPaths[i]);
+                    processor.DrawImage(image, new Size(image.Width, image.Height), new Point(startWidth + (i+1) * image.Width + 10, board.Height - image.Height), new GraphicsOptions());
+                }
+            });
+
+            if (!Directory.Exists($"{Directory.GetCurrentDirectory()}\\BlackJack\\"))
+                Directory.CreateDirectory($"{Directory.GetCurrentDirectory()}\\BlackJack\\");
+            board.Save($"{Directory.GetCurrentDirectory()}\\BlackJack\\board{guid}.png");
+
+            return $"{guid}";
         }
 
         public void GiveDealerACard()

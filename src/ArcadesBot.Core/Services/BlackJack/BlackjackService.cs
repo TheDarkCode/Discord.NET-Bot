@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Discord;
 
 namespace ArcadesBot
@@ -25,6 +26,16 @@ namespace ArcadesBot
             return true;
         }
 
+        public string CreateImage(ulong playerId, bool showFullDealerCards = false)
+        {
+            if (_matchList.All(x => x.Key != playerId) && _matchList.Count != 0)
+                return "";
+            _matchList.TryGetValue(playerId, out var match);
+
+            return match.CreateImageAsync(showFullDealerCards);
+        }
+
+
         public string GetScoreFromMatch(ulong playerId)
         {
             if (_matchList.All(x => x.Key != playerId))
@@ -35,9 +46,7 @@ namespace ArcadesBot
 
         }
 
-        public void ClearMatches()
-        {
-            _matchList.Clear();
-        }
+        public void ClearMatches() 
+            => _matchList.Clear();
     }
 } 
