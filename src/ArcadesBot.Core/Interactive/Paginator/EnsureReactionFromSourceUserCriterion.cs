@@ -1,0 +1,17 @@
+﻿using System.Threading.Tasks;
+using ArcadesBot;
+using Discord.Commands;
+using Discord.WebSocket;
+
+namespace Discord.Addons.Interactive
+{
+    internal class EnsureReactionFromSourceUserCriterion : ICriterion<SocketReaction>
+    {
+
+        public Task<bool> JudgeAsync(CustomCommandContext sourceContext, SocketReaction parameter)
+        {
+            bool ok = parameter.UserId == sourceContext.User.Id;
+            return Task.FromResult(ok);
+        }
+    }
+}

@@ -28,6 +28,9 @@ namespace ArcadesBot
         {
             await Context.Channel.TriggerTypingAsync();
             _ = Task.Run(() => SaveDocuments(document));
+            if(embed == null)
+                return await base.ReplyAsync(message);
+
             return await base.ReplyAsync(message, false, embed.Build());
         }
 

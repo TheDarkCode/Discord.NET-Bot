@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Discord.Addons.Interactive;
 
 namespace ArcadesBot
 {
@@ -31,6 +32,7 @@ namespace ArcadesBot
                 .AddSingleton<ChessService>()
                 .AddSingleton<WebhookService>()
                 .AddSingleton<BlackJackService>()
+                .AddSingleton<InteractiveService>()
                 .AddSingleton<GuildHelper>()
                 .AddSingleton<WebhookService>()
                 .AddSingleton<DatabaseHandler>()

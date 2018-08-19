@@ -81,8 +81,12 @@ namespace ArcadesBot
         public string CreateImageAsync(bool showFullDealerCards = false)
         {
             var playerCardsPaths = new List<string>();
+            var dealerCardsPaths = new List<string>();
             foreach (var card in _player.ShowHand())
                 playerCardsPaths.Add(card.ImagePath);
+
+            foreach (var card in _dealer.ShowHand())
+                dealerCardsPaths.Add(card.ImagePath);
 
             var guid = Guid.NewGuid();
             var board = Image.Load(_assetService.GetImagePath("Cards", "board.png"));
@@ -90,12 +94,21 @@ namespace ArcadesBot
             board.Mutate(processor =>
             {
                 var playerCardCount = playerCardsPaths.Count;
-                var startWidth = ((board.Width / playerCardCount) / playerCardCount) - (playerCardCount * 10) / playerCardCount;
+                var playerStartWidth = ((board.Width / playerCardCount) / playerCardCount) - (playerCardCount * 10) / playerCardCount;
 
-                for (var i = 0; i < playerCardsPaths.Count; i++)
+                var dealerCardCount = playerCardsPaths.Count;
+                var dealerStartWidth = ((board.Width / dealerCardCount) / dealerCardCount) - (dealerCardCount * 10) / dealerCardCount;
+
+                for (var i = 0; i < playerCardCount; i++)
                 {
                     var image = Image.Load(playerCardsPaths[i]);
-                    processor.DrawImage(image, new Size(image.Width, image.Height), new Point(startWidth + (i+1) * image.Width + 10, board.Height - image.Height), new GraphicsOptions());
+                    processor.DrawImage(image, new Size(image.Width, image.Height), new Point(playerStartWidth + (i+1) * image.Width + 10, board.Height - image.Height), new GraphicsOptions());
+                }
+
+                for (var i = 0; i < dealerCardCount; i++)
+                {
+                    var image = Image.Load(!showFullDealerCards && i == 0 ? _assetService.GetImagePath("Cards", "DealerHiddenCard.png") : dealerCardsPaths[i]);
+                    processor.DrawImage(image, new Size(image.Width, image.Height), new Point(dealerStartWidth + ((i + 1) * image.Width) + 10, 0), new GraphicsOptions());
                 }
             });
 
