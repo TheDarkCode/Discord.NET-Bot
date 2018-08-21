@@ -14,9 +14,11 @@ namespace Discord.Addons.Interactive
 
         private Dictionary<ulong, IReactionCallback> _callbacks;
         private TimeSpan _defaultTimeout;
+        private BlackJackService _blackJackService { get; }
 
-        public InteractiveService(DiscordSocketClient discord, TimeSpan? defaultTimeout = null)
+        public InteractiveService(DiscordSocketClient discord, BlackJackService blackJackService, TimeSpan? defaultTimeout = null)
         {
+            _blackJackService = blackJackService;
             Discord = discord;
             Discord.ReactionAdded += HandleReactionAsync;
 
@@ -77,6 +79,13 @@ namespace Discord.Addons.Interactive
             return callback.Message;
         }
 
+        public async Task<IUserMessage> StartBlackJack(CustomCommandContext context, InteractiveBase interactiveBase, ICriterion<SocketReaction> criterion)
+        {
+            var callback = new ReactionResponseCallback(this, interactiveBase, context, criterion, _blackJackService);
+            await callback.DisplayAsync().ConfigureAwait(false);
+            return callback.Message;
+        }
+
         public void AddReactionCallback(IMessage message, IReactionCallback callback)
             => _callbacks[message.Id] = callback;
         public void RemoveReactionCallback(IMessage message)
@@ -88,23 +97,24 @@ namespace Discord.Addons.Interactive
 
         private async Task HandleReactionAsync(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction reaction)
         {
-            if (reaction.UserId == Discord.CurrentUser.Id) return;
-            if (!(_callbacks.TryGetValue(message.Id, out var callback))) return;
+            if (reaction.UserId == Discord.CurrentUser.Id)
+                return;
+            if (!(_callbacks.TryGetValue(message.Id, out var callback)))
+                return;
             if (!(await callback.Criterion.JudgeAsync(callback.Context, reaction).ConfigureAwait(false)))
                 return;
-            switch (callback.RunMode)
+            if (callback.RunMode == RunMode.Async)
             {
-                case RunMode.Async:
-                    _ = Task.Run(async () =>
-                    {
-                        if (await callback.HandleCallbackAsync(reaction).ConfigureAwait(false))
-                            RemoveReactionCallback(message.Id);
-                    });
-                    break;
-                default:
+                _ = Task.Run(async () =>
+                {
                     if (await callback.HandleCallbackAsync(reaction).ConfigureAwait(false))
                         RemoveReactionCallback(message.Id);
-                    break;
+                });
+            }
+            else
+            {
+                if (await callback.HandleCallbackAsync(reaction).ConfigureAwait(false))
+                    RemoveReactionCallback(message.Id);
             }
         }
 

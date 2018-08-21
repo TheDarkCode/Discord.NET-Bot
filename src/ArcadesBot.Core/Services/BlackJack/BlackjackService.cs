@@ -46,6 +46,16 @@ namespace ArcadesBot
 
         }
 
+        public bool RemovePlayerFromMatch(ulong playerId)
+        {
+            if (_matchList.All(x => x.Key != playerId))
+                return false;
+
+            _matchList.Remove(playerId);
+            return true;
+
+        }
+
         public void ClearMatches() 
             => _matchList.Clear();
     }

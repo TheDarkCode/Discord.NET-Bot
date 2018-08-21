@@ -17,6 +17,14 @@ namespace Discord.Addons.Interactive
         public Task<SocketMessage> NextMessageAsync(bool fromSourceUser = true, bool inSourceChannel = true, TimeSpan? timeout = null) 
             => Interactive.NextMessageAsync(Context, fromSourceUser, inSourceChannel, timeout);
 
+        public Task<IUserMessage> StartBlackJackAsync()
+        {
+            var criterion = new Criteria<SocketReaction>()
+                .AddCriterion(new EnsureReactionFromSourceUserCriterion());
+
+            return Interactive.StartBlackJack(Context, this, criterion);
+        }
+
         public Task<IUserMessage> ReplyAndDeleteAsync(string content, bool isTTS = false, Embed embed = null, TimeSpan? timeout = null, RequestOptions options = null)
             => Interactive.ReplyAndDeleteAsync(Context, content, isTTS, embed, timeout, options);
 
@@ -28,6 +36,7 @@ namespace Discord.Addons.Interactive
             };
             return PagedReplyAsync(pager, fromSourceUser);
         }
+
         public Task<IUserMessage> PagedReplyAsync(PaginatedMessage pager, bool fromSourceUser = true)
         {
             var criterion = new Criteria<SocketReaction>();
@@ -35,6 +44,7 @@ namespace Discord.Addons.Interactive
                 criterion.AddCriterion(new EnsureReactionFromSourceUserCriterion());
             return PagedReplyAsync(pager, criterion);
         }
+
         public Task<IUserMessage> PagedReplyAsync(PaginatedMessage pager, ICriterion<SocketReaction> criterion)
             => Interactive.SendPaginatedMessageAsync(Context, pager, criterion);
 

@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using Sparrow.Platform.Posix.macOS;
 
 namespace ArcadesBot
 {
@@ -52,11 +54,14 @@ namespace ArcadesBot
             {
                 return 21;
             }
-
+          
             if (_myScore > 21)
             {
                 Busted = true;
             }
+
+            if (_myScore + 10 < 21 && _hand.Any(x => x.Value == CardValue.Ace))
+                _myScore += 10;
 
             return _myScore;
         }

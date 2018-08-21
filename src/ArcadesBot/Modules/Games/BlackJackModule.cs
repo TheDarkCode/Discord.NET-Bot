@@ -23,14 +23,8 @@ namespace ArcadesBot
                 return;
             }
 
-            var guid = _blackjackService.CreateImage(Context.User.Id);
-            var embedBuilder = new EmbedBuilder()
-                .WithSuccessColor()
-                .WithImageUrl($"attachment://board{guid}.png")
-                .WithDescription(_blackjackService.GetScoreFromMatch(Context.User.Id))
-                .WithFooter("Available options: stand and hit (timeout = 30 seconds)");
-            var messageToUpdate = await SendFileAsync($"BlackJack/board{guid}.png", embed: embedBuilder);
-            var message = await NextMessageAsync(timeout: TimeSpan.FromSeconds(30));
+            await StartBlackJackAsync();
+            _blackjackService.ClearMatches();
 
         }
         [Command("clear"), Summary("Clear all Matches")]
