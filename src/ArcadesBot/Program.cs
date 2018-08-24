@@ -14,6 +14,9 @@ namespace ArcadesBot
 
         public async Task StartAsync()
         {
+            AppHelper.CreateDirectory("Config");
+            AppHelper.CreateDirectory("Chessboards");
+            AppHelper.CreateDirectory("BlackJack");
             PrettyConsole.NewLine($"ArcadesBot v{AppHelper.Version}");
             PrettyConsole.NewLine();
 

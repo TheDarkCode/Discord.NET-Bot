@@ -39,7 +39,10 @@ namespace ArcadesBot
                     }
                 }
                 else
+                {
                     str = Context.Guild.GetUser(chessMatchStatus.NextPlayerId).Mention + " is up next";
+                }
+
                 var embedBuilder = new EmbedBuilder()
                     .WithSuccessColor()
                     .WithImageUrl(chessMatchStatus.ImageLink)

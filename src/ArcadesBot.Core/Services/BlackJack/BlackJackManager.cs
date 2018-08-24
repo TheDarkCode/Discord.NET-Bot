@@ -1,80 +1,56 @@
-﻿using System;
+﻿using Discord.Commands;
+using SixLabors.ImageSharp;
+using SixLabors.Primitives;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Threading.Tasks;
-using SixLabors.ImageSharp;
-using SixLabors.Primitives;
 
 namespace ArcadesBot
 {
     public class BlackJackManager
     {
-        private BlackJackHelper _blackJackHelper { get; }
+        private BlackJackHandler _blackJackHelper { get; }
         private AssetService _assetService { get; }
 
-        public BlackJackManager(AssetService assetService, BlackJackHelper blackJackHelper)
+        public BlackJackManager(AssetService assetService, BlackJackHandler blackJackHandler)
         {
-            _blackJackHelper = blackJackHelper;
+            _blackJackHelper = blackJackHandler;
             _assetService = assetService;
-            _playingDeck = new DeckModel(_assetService);
+        }
+
+        private GameModel _game { get; set; }
+
+        public void StartGame(ICommandContext context)
+        {
+            _game.PlayingDeck = new DeckModel(_assetService);
+            _game.GuildId = context.Guild.Id;
+            _game.PlayerId = context.Message.Author.Id;
             DealFirstTwoCards();
         }
-        private readonly DeckModel _playingDeck;
-        private readonly PlayerModel _player = new PlayerModel();
-        private readonly PlayerModel _dealer = new PlayerModel();
-
+        
         public void DealFirstTwoCards()
         {
-            _playingDeck.Shuffle();
+            _game.PlayingDeck.Shuffle();
 
-            _dealer.HitMe(_playingDeck.DealCard());
-            _dealer.HitMe(_playingDeck.DealCard());
+            _game.Dealer.HitMe(_game.PlayingDeck.DealCard());
+            _game.Dealer.HitMe(_game.PlayingDeck.DealCard());
 
-            _player.HitMe(_playingDeck.DealCard());
-            _player.HitMe(_playingDeck.DealCard());
+            _game.Player.HitMe(_game.PlayingDeck.DealCard());
+            _game.Player.HitMe(_game.PlayingDeck.DealCard());
         }
 
         public CardModel DealCard()
-            => _playingDeck.DealCard();
-
-        private int GetHandScore(List<CardModel> cards)
-        {
-            if (cards == null)
-                throw new ArgumentNullException(nameof(cards));
-            var score = 0;
-            foreach (var t in cards)
-            {
-                var cardValue = (int)t.Value;
-                if (cardValue > 10)
-                {
-                    cardValue = 10;
-                }
-                score += cardValue;
-            }
-
-            if (score > 21)
-            {
-                score = -1;
-            }
-
-            //Blackjack returns 0
-            if (cards.Count == 2 && (cards[0].Value == CardValue.Ace && (int)cards[1].Value >= 10 || cards[1].Value == CardValue.Ace && (int)cards[0].Value >= 10))
-            {
-                return 0;
-            }
-
-            return score;
-        }
+            => _game.PlayingDeck.DealCard();
 
         public string DisplayScores(bool fullDealerCards = false)
         {
             var dealerScore = GetDealerScore();
             if (!fullDealerCards)
-                dealerScore = (int)_dealer.ShowHand()[0].Value;
+                dealerScore = (int)_game.Dealer.ShowHand()[0].Value;
             var sb = new StringBuilder();
             sb.AppendLine(fullDealerCards ? $"Dealer has : {dealerScore}" : $"Dealer has : {dealerScore} but 1 card is hidden");
-            sb.AppendLine($"Player has : {_player.GetScore()}");
+            sb.AppendLine($"Player has : {_game.Player.GetScore()}");
             return sb.ToString();
         }
 
@@ -82,10 +58,10 @@ namespace ArcadesBot
         {
             var playerCardsPaths = new List<string>();
             var dealerCardsPaths = new List<string>();
-            foreach (var card in _player.ShowHand())
+            foreach (var card in _game.Player.ShowHand())
                 playerCardsPaths.Add(card.ImagePath);
 
-            foreach (var card in _dealer.ShowHand())
+            foreach (var card in _game.Dealer.ShowHand())
                 dealerCardsPaths.Add(card.ImagePath);
 
             var guid = Guid.NewGuid();
@@ -111,18 +87,18 @@ namespace ArcadesBot
                     processor.DrawImage(image, new Size(image.Width, image.Height), new Point(dealerStartWidth + ((i + 1) * image.Width) + 10, 0), new GraphicsOptions());
                 }
             });
-
-            if (!Directory.Exists($"{Directory.GetCurrentDirectory()}\\BlackJack\\"))
-                Directory.CreateDirectory($"{Directory.GetCurrentDirectory()}\\BlackJack\\");
             board.Save($"{Directory.GetCurrentDirectory()}\\BlackJack\\board{guid}.png");
 
             return $"{guid}";
         }
 
+        public void GivePlayerACard()
+            => _game.Player.HitMe(_game.PlayingDeck.DealCard());
+
         public void GiveDealerACard()
-            => _dealer.HitMe(_playingDeck.DealCard());
+            => _game.Dealer.HitMe(_game.PlayingDeck.DealCard());
 
         public int GetDealerScore()
-            => _dealer.GetScore();
+            => _game.Dealer.GetScore();
     }
 }

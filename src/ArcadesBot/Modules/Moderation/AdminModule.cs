@@ -203,7 +203,9 @@ namespace ArcadesBot
                         Context.Server.JoinMessages.RemoveAt(index-1);
                     }
                     else
+                    {
                         Context.Server.JoinMessages.Remove(message);
+                    }
 
                     return ReplyEmbedAsync("Join message has been removed.", document: DocumentType.Server);
             }
@@ -232,7 +234,10 @@ namespace ArcadesBot
                         Context.Server.LeaveMessages.RemoveAt(index - 1);
                     }
                     else
+                    {
                         Context.Server.LeaveMessages.Remove(message);
+                    }
+
                     return ReplyEmbedAsync("Leave message has been removed.", document: DocumentType.Server);
             }
             return Task.CompletedTask;

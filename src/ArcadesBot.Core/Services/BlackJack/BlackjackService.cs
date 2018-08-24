@@ -1,19 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Discord;
 
 namespace ArcadesBot
 {
     public class BlackJackService
     {
         private AssetService _assetService { get; }
-        private BlackJackHelper _blackJackHelper { get; }
-        public BlackJackService(AssetService assetService, BlackJackHelper blackJackHelper)
+        private BlackJackHandler _blackJackHandler { get; }
+        public BlackJackService(AssetService assetService, BlackJackHandler blackJackHandler)
         {
             _assetService = assetService;
-            _blackJackHelper = blackJackHelper;
+            _blackJackHandler = blackJackHandler;
         }
 
         private readonly Dictionary<ulong, BlackJackManager> _matchList = new Dictionary<ulong, BlackJackManager>();
@@ -22,7 +19,7 @@ namespace ArcadesBot
         {
             if (_matchList.All(x => x.Key != playerId) && _matchList.Count != 0)
                 return false;
-            _matchList.Add(playerId, new BlackJackManager(_assetService, _blackJackHelper));
+            _matchList.Add(playerId, new BlackJackManager(_assetService, _blackJackHandler));
             return true;
         }
 
@@ -35,6 +32,20 @@ namespace ArcadesBot
             return match.CreateImageAsync(showFullDealerCards);
         }
 
+        public string DrawCard(ulong playerId, bool dealer = false)
+        {
+            if (_matchList.All(x => x.Key != playerId))
+                return "Player isn't in match";
+            _matchList.TryGetValue(playerId, out var match);
+
+            if(dealer)
+                match.GiveDealerACard();
+            else
+                match.GivePlayerACard();
+
+            return CreateImage(playerId);
+        }
+
 
         public string GetScoreFromMatch(ulong playerId)
         {
@@ -43,7 +54,6 @@ namespace ArcadesBot
             _matchList.TryGetValue(playerId, out var match);
 
             return match.DisplayScores();
-
         }
 
         public bool RemovePlayerFromMatch(ulong playerId)
@@ -53,7 +63,6 @@ namespace ArcadesBot
 
             _matchList.Remove(playerId);
             return true;
-
         }
 
         public void ClearMatches() 

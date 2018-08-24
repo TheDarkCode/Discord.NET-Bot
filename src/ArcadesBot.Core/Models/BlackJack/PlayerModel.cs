@@ -7,7 +7,7 @@ namespace ArcadesBot
 {
     public class PlayerModel
     {
-        private List<CardModel> _hand = new List<CardModel>();
+        private readonly List<CardModel> _hand = new List<CardModel>();
         private int _myScore;
 
         public bool Busted { get; set; }

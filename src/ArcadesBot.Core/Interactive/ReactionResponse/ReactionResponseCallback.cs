@@ -1,10 +1,9 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using ArcadesBot;
+﻿using ArcadesBot;
 using ArcadesBot.Interactive.ReactionResponse;
 using Discord.Commands;
 using Discord.WebSocket;
+using System;
+using System.Threading.Tasks;
 
 namespace Discord.Addons.Interactive
 {
@@ -18,7 +17,7 @@ namespace Discord.Addons.Interactive
         public RunMode RunMode => RunMode.Sync;
         public ICriterion<SocketReaction> Criterion { get; }
         public BlackJackService BlackJackService { get; }
-        public TimeSpan? Timeout { get; private set; }
+        public TimeSpan? Timeout { get; }
         private bool _userClicked = false;
         private ReactionResponseAppearanceOptions _options = new ReactionResponseAppearanceOptions();
 
@@ -43,7 +42,7 @@ namespace Discord.Addons.Interactive
                 .WithSuccessColor()
                 .WithImageUrl($"attachment://board{guid}.png")
                 .WithDescription(BlackJackService.GetScoreFromMatch(Context.User.Id))
-                .WithFooter("Available options: stand and hit (timeout = 30 seconds)");
+                .WithFooter("React with the action you want to perform. (timeout = 30 seconds)");
             var message = await InteractiveBase.SendFileAsync($"BlackJack/board{guid}.png", embed: embedBuilder);
             Message = message;
             Interactive.AddReactionCallback(message, this);
@@ -54,13 +53,14 @@ namespace Discord.Addons.Interactive
                 await message.AddReactionAsync(_options.StandEmote);
             });
 
-            if (Timeout != null && !_userClicked)
+            if (Timeout != null)
             {
                 _ = Task.Delay(Timeout.Value).ContinueWith(_ =>
                 {
-                    BlackJackService.RemovePlayerFromMatch(Context.User.Id);
+                    //BlackJackService.RemovePlayerFromMatch(Context.User.Id);
                     Interactive.RemoveReactionCallback(message);
-                    _ = Message.DeleteAsync();
+                    if(!_userClicked)
+                        _ = Message.DeleteAsync();
                 });
             }
         }
@@ -72,13 +72,21 @@ namespace Discord.Addons.Interactive
             if (emote.Equals(_options.HitEmote))
             {
                 _userClicked = true;
-                BlackJackService.RemovePlayerFromMatch(Context.User.Id);
+                await Message.DeleteAsync();
+                Interactive.RemoveReactionCallback(Message);
+                _ = Task.Run(async () =>
+                {
+                    await DisplayAsync();
+                });
+                
+
+                //BlackJackService.RemovePlayerFromMatch(Context.User.Id);
                 PrettyConsole.Log(LogSeverity.Info, "Callback", "User clicked HitEmote");
             }
             if (emote.Equals(_options.StandEmote))
             {
                 _userClicked = true;
-                BlackJackService.RemovePlayerFromMatch(Context.User.Id);
+                //BlackJackService.RemovePlayerFromMatch(Context.User.Id);
                 PrettyConsole.Log(LogSeverity.Info, "Callback", "User clicked StandEmote");
             }
             _ = Message.RemoveReactionAsync(reaction.Emote, reaction.User.Value);

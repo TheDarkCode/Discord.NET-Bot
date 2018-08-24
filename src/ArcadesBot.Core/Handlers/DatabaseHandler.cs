@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using Discord;
+﻿using Discord;
 using Newtonsoft.Json;
 using Raven.Client.Documents;
 using Raven.Client.ServerWide;
 using Raven.Client.ServerWide.Operations;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 
 namespace ArcadesBot
 {
@@ -28,8 +28,6 @@ namespace ArcadesBot
                 var dbConfigPath = $"{Directory.GetCurrentDirectory()}/config/DBConfig.json";
                 if (File.Exists(dbConfigPath))
                     return JsonConvert.DeserializeObject<DatabaseModel>(File.ReadAllText(dbConfigPath));
-                if (!Directory.Exists($"{Directory.GetCurrentDirectory()}/config/"))
-                    Directory.CreateDirectory($"{Directory.GetCurrentDirectory()}/config/");
                 File.WriteAllText(dbConfigPath, JsonConvert.SerializeObject(new DatabaseModel(), Formatting.Indented));
                 return JsonConvert.DeserializeObject<DatabaseModel>(File.ReadAllText(dbConfigPath));
             }

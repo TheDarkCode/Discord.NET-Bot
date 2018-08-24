@@ -20,7 +20,7 @@ namespace ArcadesBot
                 .AddSingleton<DatabaseHandler>()
                 .AddSingleton<ChessHandler>()
                 .AddSingleton<GuildHandler>()
-                .AddSingleton<BlackJackHelper>()
+                .AddSingleton<BlackJackHandler>()
                 .AddSingleton<ChessStatsHandler>()
                 .AddSingleton<SchedulerService>()
                 .AddSingleton<CommandManager>()

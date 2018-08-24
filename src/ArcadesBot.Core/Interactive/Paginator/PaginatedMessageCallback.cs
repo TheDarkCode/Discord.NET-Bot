@@ -1,9 +1,9 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using ArcadesBot;
+﻿using ArcadesBot;
 using Discord.Commands;
 using Discord.WebSocket;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Discord.Addons.Interactive
 {
@@ -80,7 +80,9 @@ namespace Discord.Addons.Interactive
             var emote = reaction.Emote;
 
             if (emote.Equals(options.First))
+            {
                 page = 1;
+            }
             else if (emote.Equals(options.Next))
             {
                 if (page >= pages)
@@ -94,7 +96,9 @@ namespace Discord.Addons.Interactive
                 --page;
             }
             else if (emote.Equals(options.Last))
+            {
                 page = pages;
+            }
             else if (emote.Equals(options.Stop))
             {
                 await Message.DeleteAsync().ConfigureAwait(false);
