@@ -90,8 +90,6 @@ namespace ArcadesBot
                     break;
                 case CommandError.Unsuccessful:
                     break;
-                default:
-                    throw new ArgumentOutOfRangeException();
             }
             _ = Task.Run(() => RecordCommand(command, context));
         }
@@ -121,7 +119,7 @@ namespace ArcadesBot
                 Name = _discord.CurrentUser.Username,
                 Webhook = config.LeaveWebhook,
                 Message = !config.LeaveMessages.Any() ? $"**{user.Username}** abandoned us!"
-                : StringHelper.Replace(config.LeaveMessages[_random.Next(0, config.LeaveMessages.Count)], user.Guild.Name, user.Username)
+                : config.JoinMessages[_random.Next(0, config.JoinMessages.Count)].Replace(user.Guild.Name, user.Username)
             });
         }
 
@@ -133,7 +131,7 @@ namespace ArcadesBot
                 Name = _discord.CurrentUser.Username,
                 Webhook = config.JoinWebhook,
                 Message = !config.JoinMessages.Any() ? $"**{user.Username}** is here to rock our world! Yeah, baby!"
-                : StringHelper.Replace(config.JoinMessages[_random.Next(0, config.JoinMessages.Count)], user.Guild.Name, user.Mention)
+                : config.JoinMessages[_random.Next(0, config.JoinMessages.Count)].Replace(user.Guild.Name, user.Mention)
             });
             var role = user.Guild.GetRole(config.Mod.JoinRole);
             if (role != null)

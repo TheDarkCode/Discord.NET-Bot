@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <RootNamespace>ArcadesBot</RootNamespace>
-    <Version>1.1.4</Version>
+    <Version>1.1.5</Version>
     <Authors>Arcade116 on Github</Authors>
     <Product />
     <RepositoryUrl>https://github.com/Arcade116/Discord.NET-Bot</RepositoryUrl>

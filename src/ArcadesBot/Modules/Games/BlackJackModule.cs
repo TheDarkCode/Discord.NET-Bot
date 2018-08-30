@@ -14,7 +14,7 @@ namespace ArcadesBot
         public BlackJackModule(BlackJackService blackjackService) 
             => _blackjackService = blackjackService;
 
-        [Command("start"), Summary("Start a BlackJack Match")]
+        [Command("start"), Summary("Start a BlackJack Match"), Usage("blackjack start")]
         public async Task StartMatchAsync()
         {
             if (!_blackjackService.StartMatch(Context.User.Id))
@@ -27,7 +27,7 @@ namespace ArcadesBot
             _blackjackService.ClearMatches();
 
         }
-        [Command("clear"), Summary("Clear all Matches")]
+        [Command("clear"), Summary("Clear all Matches"), Usage("blackjack clear")]
         public async Task ClearMatches()
         {
             _blackjackService.ClearMatches();

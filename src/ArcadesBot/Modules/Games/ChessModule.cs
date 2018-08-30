@@ -20,7 +20,7 @@ namespace ArcadesBot
 
         [RequireContext(ContextType.Guild)]
         [Command("show")]
-        [Summary("Shows the current board")]
+        [Summary("Shows the current board"), Usage("show")]
         public async Task ShowAsync()
         {
             await Context.Channel.TriggerTypingAsync();
@@ -60,7 +60,7 @@ namespace ArcadesBot
 
         [RequireContext(ContextType.Guild)]
         [Command("accept")]
-        [Summary("Accepts challenge if you have one")]
+        [Summary("Accepts challenge if you have one"), Usage("accept")]
         public async Task AcceptAsync()
         {
             await Context.Channel.TriggerTypingAsync();
@@ -89,7 +89,7 @@ namespace ArcadesBot
         }
         [RequireContext(ContextType.Guild)]
         [Command("challenge")]
-        [Summary("Challenge someone to a chess match")]
+        [Summary("Challenge someone to a chess match"), Usage("challenge @Arcadesbot#1337")]
         public async Task ChallengeAsync([Summary("The person you want to challenge to a match of chess")]IUser user)
         {
             await Context.Channel.TriggerTypingAsync();
@@ -120,7 +120,7 @@ namespace ArcadesBot
 
         [RequireContext(ContextType.Guild)]
         [Command("resign")]
-        [Summary("Resign from your current chess game")]
+        [Summary("Resign from your current chess game"), Usage("resign")]
         public async Task ResignAsync()
         {
             await Context.Channel.TriggerTypingAsync();
@@ -140,7 +140,7 @@ namespace ArcadesBot
 
         [RequireContext(ContextType.Guild)]
         [Command("stats")]
-        [Summary("Currently a filler command")]
+        [Summary("Currently a filler command"), Usage("stats")]
         public async Task StatsAsync()
         {
 
@@ -149,7 +149,7 @@ namespace ArcadesBot
 
         [RequireContext(ContextType.Guild)]
         [Command("move")]
-        [Summary("Move a piece on the board")]
+        [Summary("Move a piece on the board"), Usage("move a1a3")]
         public async Task MoveAsync([Summary("Moves a piece, if your pawn reaches the other side of the board it will be promoted to queen by default.\nYou can promote your pawn to other pieces if you like, r = Rook, b = Bishop, q = Queen, n = Knight. \nAn example move promoting a white pawn to a Knight would be **!a7a8n**")]string move)
         {
             await Context.Channel.TriggerTypingAsync();

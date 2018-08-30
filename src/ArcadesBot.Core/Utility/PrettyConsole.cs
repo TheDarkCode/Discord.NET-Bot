@@ -42,47 +42,10 @@ namespace ArcadesBot
 
         public static void Log(object severity, string source, string message)
         {
-            NewLine($"{DateTime.Now.ToString("hh:mm:ss")} ", ConsoleColor.DarkGray);
+            NewLine($"{DateTime.Now:hh:mm:ss} ", ConsoleColor.DarkGray);
             Append($"[{severity}] ", ConsoleColor.Red);
             Append($"{source}: ", ConsoleColor.DarkGreen);
             Append(message, ConsoleColor.White);
-        }
-
-        public static Task LogAsync(object severity, string source, string message)
-        {
-            NewLine($"{DateTime.Now.ToString("hh:mm:ss")} ", ConsoleColor.DarkGray);
-            Append($"[{severity}] ", ConsoleColor.Red);
-            Append($"{source}: ", ConsoleColor.DarkGreen);
-            Append(message, ConsoleColor.White);
-            return Task.CompletedTask;
-        }
-
-        public static void Log(IUserMessage msg)
-        {
-            var channel = msg.Channel as IGuildChannel;
-            NewLine($"{DateTime.Now.ToString("hh:mm:ss")} ", ConsoleColor.Gray);
-
-            if (channel?.Guild == null)
-                Append($"[PM] ", ConsoleColor.Magenta);
-            else
-                Append($"[{channel.Guild.Name} #{channel.Name}] ", ConsoleColor.DarkGreen);
-
-            Append($"{msg.Author}: ", ConsoleColor.Green);
-            Append(msg.Content, ConsoleColor.White);
-        }
-
-        public static void Log(CommandContext c)
-        {
-            var channel = c.Channel as SocketGuildChannel;
-            NewLine($"{DateTime.Now.ToString("hh:mm:ss")} ", ConsoleColor.Gray);
-
-            if (channel == null)
-                Append($"[PM] ", ConsoleColor.Magenta);
-            else
-                Append($"[{c.Guild.Name} #{channel.Name}] ", ConsoleColor.DarkGreen);
-
-            Append($"{c.User}: ", ConsoleColor.Green);
-            Append(c.Message.Content, ConsoleColor.White);
         }
     }
 }

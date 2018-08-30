@@ -22,8 +22,8 @@ namespace ArcadesBot
                .AddField("General Information",
                 $"```ebnf\n" +
                 $"Prefix                : {Context.Server.Prefix}\n" +
-                $"Join Channel          : #{StringHelper.CheckChannel(Context.Guild as SocketGuild, Context.Server.JoinWebhook.TextChannel)}\n" +
-                $"Leave Channel         : #{StringHelper.CheckChannel(Context.Guild as SocketGuild, Context.Server.LeaveWebhook.TextChannel)}\n" +
+                $"Join Channel          : #{Context.Guild.CheckChannel(Context.Server.JoinWebhook.TextChannel)}\n" +
+                $"Leave Channel         : #{Context.Guild.CheckChannel(Context.Server.LeaveWebhook.TextChannel)}\n" +
                 $"Join Messages         : {Context.Server.JoinMessages.Count}\n" +
                 $"Leave Messages        : {Context.Server.LeaveMessages.Count}\n" +
                 $"AFK Users             : {Context.Server.Afk.Count}\n" +
@@ -31,8 +31,8 @@ namespace ArcadesBot
                 $"```", false)
                 .AddField("Admin Information",
                 $"```diff\n" +
-                $"+ Join Role           : @{StringHelper.CheckRole(Context.Guild as SocketGuild, Context.Server.Mod.JoinRole)}\n" +
-                $"+ Mute Role           : @{StringHelper.CheckRole(Context.Guild as SocketGuild, Context.Server.Mod.MuteRole)}\n" +
+                $"+ Join Role           : @{Context.Guild.CheckRole(Context.Server.Mod.JoinRole)}\n" +
+                $"+ Mute Role           : @{Context.Guild.CheckRole(Context.Server.Mod.MuteRole)}\n" +
                 $"+ Blacklisted Users   : {Context.Server.Profiles.Count(x => x.Value.IsBlacklisted)}\n" +
                 $"+ Blacklisted Channels: {Context.Server.BlackListedChannels.Count}\n" +
                 $"```", false);
@@ -52,7 +52,7 @@ namespace ArcadesBot
         [Command("Setup"), Summary("Set ups the bot for your server.")]
         public async Task SetupAsync()
         {
-            if (Context.Server.IsConfigured == true)
+            if (Context.Server.IsConfigured)
             {
                 await ReplyEmbedAsync($"{Context.Guild} has already been configured.");
                 return;
@@ -120,7 +120,7 @@ namespace ArcadesBot
             var owner = await Context.Guild.Owner.GetOrCreateDMChannelAsync();
             if (Context.Guild.OwnerId != Context.User.Id)
             {
-                await ReplyAsync("Requires Server Owner.");
+                await ReplyEmbedAsync("Requires Server Owner.");
                 return;
             }
             var serialize = JsonConvert.SerializeObject(Context.Server, Formatting.Indented, new JsonSerializerSettings

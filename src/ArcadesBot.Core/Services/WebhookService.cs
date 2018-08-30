@@ -28,7 +28,7 @@ namespace ArcadesBot
             if (File.Exists("Avatar.jpg"))
                 return new FileStream("Avatar.jpg", FileMode.Open, FileAccess.Read);
             return new FileStream(
-                StringHelper.DownloadImageAsync(_httpClient, _client.CurrentUser.GetAvatarUrl()).GetAwaiter()
+                _httpClient.DownloadImageAsync(_client.CurrentUser.GetAvatarUrl()).GetAwaiter()
                     .GetResult(),
                 FileMode.Open, FileAccess.Read);
         }
