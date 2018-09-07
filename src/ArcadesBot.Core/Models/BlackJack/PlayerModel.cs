@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Sparrow.Platform.Posix.macOS;
 
-namespace ArcadesBot
+namespace ArcadesBot.Models.BlackJack
 {
     public class PlayerModel
     {
@@ -12,9 +11,6 @@ namespace ArcadesBot
 
         public bool Busted { get; set; }
 
-        public PlayerModel()
-        {
-        }
 
         public void HitMe(CardModel dealtCard) 
             => _hand.Add(dealtCard);

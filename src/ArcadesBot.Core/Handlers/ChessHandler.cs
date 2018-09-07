@@ -1,8 +1,10 @@
-﻿using Discord;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using ArcadesBot.Models.Chess;
+using ArcadesBot.Utility;
+using Discord;
 
-namespace ArcadesBot
+namespace ArcadesBot.Handlers
 {
     public class ChessHandler
     {

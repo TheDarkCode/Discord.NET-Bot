@@ -1,14 +1,17 @@
-﻿using Discord;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Discord;
 using Discord.WebSocket;
 
-namespace ArcadesBot
+namespace ArcadesBot.Utility
 {
+    /// <summary>
+    /// The class that contains all extension methods I create
+    /// </summary>
     public static class ExtensionMethods
     {
         /// <summary>
@@ -93,18 +96,33 @@ namespace ArcadesBot
             return $"{fileName}.png";
         }
 
+        /// <summary>
+        /// Gives EmbedBuilder the predefined error color
+        /// </summary>
+        /// <param name="builder">N/A</param>
+        /// <returns>The EmbedBuilder</returns>
         public static EmbedBuilder WithErrorColor(this EmbedBuilder builder)
         {
             builder.Color = Color.DarkRed;
             return builder;
         }
 
+        /// <summary>
+        /// Gives EmbedBuilder the predefined info color
+        /// </summary>
+        /// <param name="builder">N/A</param>
+        /// <returns>The EmbedBuilder</returns>
         public static EmbedBuilder WithInfoColor(this EmbedBuilder builder)
         {
             builder.Color = Color.DarkGrey;
             return builder;
         }
 
+        /// <summary>
+        /// Gives EmbedBuilder the predefined success color
+        /// </summary>
+        /// <param name="builder">N/A</param>
+        /// <returns>The EmbedBuilder</returns>
         public static EmbedBuilder WithSuccessColor(this EmbedBuilder builder)
         {
             builder.Color = Color.DarkBlue;

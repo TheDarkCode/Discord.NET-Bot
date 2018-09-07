@@ -1,6 +1,7 @@
 ﻿using System;
+using ArcadesBot.Models.Chess;
 
-namespace ArcadesBot
+namespace ArcadesBot.Handlers
 {
     public class ChessStatsHandler
     {

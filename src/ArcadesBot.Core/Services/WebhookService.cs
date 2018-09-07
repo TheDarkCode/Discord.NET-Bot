@@ -1,4 +1,6 @@
-﻿using Discord;
+﻿using ArcadesBot.Models;
+using ArcadesBot.Utility;
+using Discord;
 using Discord.Rest;
 using Discord.Webhook;
 using Discord.WebSocket;
@@ -8,19 +10,17 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace ArcadesBot
+namespace ArcadesBot.Services
 {
     public class WebhookService
     {
-        public WebhookService(HttpClient httpClient, GuildHandler guild, DiscordSocketClient client)
+        public WebhookService(HttpClient httpClient, DiscordSocketClient client)
         {
-            _guildhandler = guild;
             _client = client;
             _httpClient = httpClient;
         }
 
         private HttpClient _httpClient { get; }
-        private GuildHandler _guildhandler { get; }
         private DiscordSocketClient _client { get; }
 
         private FileStream AvatarStream()

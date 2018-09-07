@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace ArcadesBot
+namespace ArcadesBot.Services
 {
     public class AssetService
     {

@@ -1,15 +1,17 @@
-﻿using Discord;
-using Newtonsoft.Json;
-using Raven.Client.Documents;
-using Raven.Client.ServerWide;
-using Raven.Client.ServerWide.Operations;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using ArcadesBot.Models;
+using ArcadesBot.Utility;
+using Discord;
+using Newtonsoft.Json;
+using Raven.Client.Documents;
+using Raven.Client.ServerWide;
+using Raven.Client.ServerWide.Operations;
 
-namespace ArcadesBot
+namespace ArcadesBot.Handlers
 {
     public class DatabaseHandler
     {

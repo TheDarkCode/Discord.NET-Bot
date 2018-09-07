@@ -1,11 +1,15 @@
-﻿using Discord;
+﻿using System;
+using System.Net.Http;
+using ArcadesBot.Handlers;
+using ArcadesBot.Helpers;
+using ArcadesBot.Models;
+using ArcadesBot.Services;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Net.Http;
 
-namespace ArcadesBot
+namespace ArcadesBot.Common
 {
     public class CustomCommandContext : ICommandContext
     {

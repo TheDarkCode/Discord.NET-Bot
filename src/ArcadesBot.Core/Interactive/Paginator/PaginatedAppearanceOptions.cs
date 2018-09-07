@@ -1,6 +1,7 @@
 ﻿using System;
+using Discord;
 
-namespace Discord.Addons.Interactive
+namespace ArcadesBot.Interactive.Paginator
 {
     public class PaginatedAppearanceOptions
     {

@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using ArcadesBot.Services;
 
-namespace ArcadesBot
+namespace ArcadesBot.Models.BlackJack
 {
     public class DeckModel
     {

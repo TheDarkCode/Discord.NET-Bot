@@ -1,11 +1,15 @@
-﻿using ArcadesBot;
-using ArcadesBot.Interactive.ReactionResponse;
+﻿using System;
+using System.Threading.Tasks;
+using ArcadesBot.Common;
+using ArcadesBot.Interactive.Callbacks;
+using ArcadesBot.Interactive.Criteria;
+using ArcadesBot.Services.BlackJack;
+using ArcadesBot.Utility;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using System;
-using System.Threading.Tasks;
 
-namespace Discord.Addons.Interactive
+namespace ArcadesBot.Interactive.ReactionResponse
 {
     public class ReactionResponseCallback : IReactionCallback
     {
@@ -18,8 +22,8 @@ namespace Discord.Addons.Interactive
         public ICriterion<SocketReaction> Criterion { get; }
         public BlackJackService BlackJackService { get; }
         public TimeSpan? Timeout { get; }
-        private bool _userClicked = false;
-        private ReactionResponseAppearanceOptions _options = new ReactionResponseAppearanceOptions();
+        private bool _userClicked;
+        private readonly ReactionResponseAppearanceOptions _options = new ReactionResponseAppearanceOptions();
 
         public ReactionResponseCallback(InteractiveService interactive,
             InteractiveBase interactiveBase,
@@ -32,7 +36,7 @@ namespace Discord.Addons.Interactive
             Interactive = interactive;
             Context = sourceContext;
             Criterion = criterion ?? new EmptyCriterion<SocketReaction>();
-            BlackJackService = blackJackService ?? null;
+            BlackJackService = blackJackService;
         }
 
         public async Task DisplayAsync()
@@ -47,7 +51,7 @@ namespace Discord.Addons.Interactive
             Message = message;
             Interactive.AddReactionCallback(message, this);
             // Reactions take a while to add, don't wait for them
-            _ = Task.Run(async () =>
+            await Task.Run(async () =>
             {
                 await message.AddReactionAsync(_options.HitEmote);
                 await message.AddReactionAsync(_options.StandEmote);
@@ -55,12 +59,12 @@ namespace Discord.Addons.Interactive
 
             if (Timeout != null)
             {
-                _ = Task.Delay(Timeout.Value).ContinueWith(_ =>
+                await Task.Delay(Timeout.Value).ContinueWith(async _ =>
                 {
                     //BlackJackService.RemovePlayerFromMatch(Context.User.Id);
                     Interactive.RemoveReactionCallback(message);
                     if(!_userClicked)
-                        _ = Message.DeleteAsync();
+                        await Message.DeleteAsync();
                 });
             }
         }
@@ -74,7 +78,7 @@ namespace Discord.Addons.Interactive
                 _userClicked = true;
                 await Message.DeleteAsync();
                 Interactive.RemoveReactionCallback(Message);
-                _ = Task.Run(async () =>
+                await Task.Run(async () =>
                 {
                     await DisplayAsync();
                 });
@@ -89,7 +93,7 @@ namespace Discord.Addons.Interactive
                 //BlackJackService.RemovePlayerFromMatch(Context.User.Id);
                 PrettyConsole.Log(LogSeverity.Info, "Callback", "User clicked StandEmote");
             }
-            _ = Message.RemoveReactionAsync(reaction.Emote, reaction.User.Value);
+            await Message.RemoveReactionAsync(reaction.Emote, reaction.User.Value);
             //await RenderAsync().ConfigureAwait(false);
             return false;
         }

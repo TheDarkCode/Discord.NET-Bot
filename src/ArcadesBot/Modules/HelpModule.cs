@@ -6,10 +6,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ArcadesBot.CommandExtensions.Attribute;
+using ArcadesBot.Common;
+using ArcadesBot.Utility;
 
 namespace ArcadesBot.Modules
 {
-    //[Group("help"), Summary("Help")]
     public class HelpModule : Base
     {
         private CommandService _commands { get; }
@@ -79,7 +81,7 @@ namespace ArcadesBot.Modules
 
             var commands = module.Commands.Where(x => !string.IsNullOrWhiteSpace(x.Summary))
                                  .GroupBy(x => x.Name)
-                                 .Select(x => x.First());
+                                 .Select(x => x.First()).ToList();
 
             if (!commands.Any())
             {
@@ -132,8 +134,9 @@ namespace ArcadesBot.Modules
                 }
 
                 embed.AddField(sbuilder.ToString(), commandInfo.Remarks ?? commandInfo.Summary);
-                for (var i = 0; i < fields.Count; i++)
-                    embed.AddField(fields[i]);
+                foreach (var field in fields)
+                    embed.AddField(field);
+
                 if (usageAttribute != null)
                     embed.AddField("Usage", $"`{prefix}{usageAttribute.Text}`");
             }
@@ -143,6 +146,6 @@ namespace ArcadesBot.Modules
             await ReplyEmbedAsync(embed: embed);
         }
         private static string GetPrefix(CustomCommandContext context)
-            => context.Server.Prefix ?? null;
+            => context.Server.Prefix;
     }
 }

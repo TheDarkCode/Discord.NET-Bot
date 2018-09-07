@@ -1,11 +1,12 @@
-﻿using Discord.Commands;
-using Google.Apis.YouTube.v3;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
+using ArcadesBot.Common;
+using Discord.Commands;
+using Google.Apis.YouTube.v3;
 using Youtube = Google.Apis.YouTube.v3.Data;
 
 
-namespace ArcadesBot
+namespace ArcadesBot.Modules.Search
 {
     [Name("Youtube")]
     [Summary("Search for things on youtube.")]

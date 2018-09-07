@@ -1,11 +1,12 @@
-﻿using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using ArcadesBot.Common;
+using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
 
-namespace ArcadesBot
+namespace ArcadesBot.CommandExtensions.Preconditions
 {
     public class RequirePermission : PreconditionAttribute
     {

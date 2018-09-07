@@ -1,11 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using ArcadesBot;
+﻿using ArcadesBot.Common;
+using ArcadesBot.Interactive.Criteria;
+using ArcadesBot.Interactive.Paginator;
+using ArcadesBot.Interactive.Results;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace Discord.Addons.Interactive
+namespace ArcadesBot.Interactive
 {
 
     public class InteractiveBase : Base
@@ -25,8 +29,8 @@ namespace Discord.Addons.Interactive
             return Interactive.StartBlackJack(Context, this, criterion);
         }
 
-        public Task<IUserMessage> ReplyAndDeleteAsync(string content, bool isTTS = false, Embed embed = null, TimeSpan? timeout = null, RequestOptions options = null)
-            => Interactive.ReplyAndDeleteAsync(Context, content, isTTS, embed, timeout, options);
+        public Task<IUserMessage> ReplyAndDeleteAsync(string content, bool isTts = false, Embed embed = null, TimeSpan? timeout = null, RequestOptions options = null)
+            => Interactive.ReplyAndDeleteAsync(Context, content, isTts, embed, timeout, options);
 
         public Task<IUserMessage> PagedReplyAsync(IEnumerable<object> pages, bool fromSourceUser = true)
         {

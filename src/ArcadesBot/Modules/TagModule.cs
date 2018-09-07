@@ -1,10 +1,14 @@
-﻿using Discord;
-using Discord.Commands;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ArcadesBot.CommandExtensions.Attribute;
+using ArcadesBot.Common;
+using ArcadesBot.Models;
+using ArcadesBot.Utility;
+using Discord;
+using Discord.Commands;
 
-namespace ArcadesBot
+namespace ArcadesBot.Modules
 {
 
     [Group("tag"), Name("Tag"), Alias("t")]
@@ -14,10 +18,6 @@ namespace ArcadesBot
         private List<TagModel> Tags
             => Context.Server.Tags;
 
-        public TagModule()
-        {
-
-        }
 
         [Command, Name("getTag"), Summary("Gets a tag with the given name."), Usage("tag \"test tag\"")]
         public async Task GetTagAsync([Summary("Name of the tag you want to retrieve from the database"), Remainder]string tagName)

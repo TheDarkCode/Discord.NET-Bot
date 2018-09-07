@@ -1,4 +1,5 @@
-﻿using Discord.Commands;
+﻿using ArcadesBot.Models.BlackJack;
+using Discord.Commands;
 using SixLabors.ImageSharp;
 using SixLabors.Primitives;
 using System;
@@ -6,19 +7,20 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace ArcadesBot
+namespace ArcadesBot.Services.BlackJack
 {
     public class BlackJackManager
     {
-        private BlackJackHandler _blackJackHelper { get; }
+        // private BlackJackHandler _blackJackHelper { get; }
         private AssetService _assetService { get; }
 
-        public BlackJackManager(AssetService assetService, BlackJackHandler blackJackHandler)
+        public BlackJackManager(AssetService assetService/*, BlackJackHandler blackJackHandler*/)
         {
-            _blackJackHelper = blackJackHandler;
+            //_blackJackHelper = blackJackHandler;
             _assetService = assetService;
         }
 
+        // ReSharper disable once UnusedAutoPropertyAccessor.Local
         private GameModel _game { get; set; }
 
         public void StartGame(ICommandContext context)

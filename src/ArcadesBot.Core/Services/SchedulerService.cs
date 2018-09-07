@@ -1,9 +1,11 @@
-﻿using FluentScheduler;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using ArcadesBot.Handlers;
+using ArcadesBot.Models.Chess;
+using FluentScheduler;
 
-namespace ArcadesBot
+namespace ArcadesBot.Services
 {
     public class SchedulerService
     {

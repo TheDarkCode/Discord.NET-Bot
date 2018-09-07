@@ -1,15 +1,17 @@
-﻿using Discord;
-using Discord.WebSocket;
-using Microsoft.CodeAnalysis.CSharp.Scripting;
-using Microsoft.CodeAnalysis.Scripting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using ArcadesBot.Common;
+using ArcadesBot.Models;
+using Discord;
+using Discord.WebSocket;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
 
-namespace ArcadesBot
+namespace ArcadesBot.Services
 {
     public class RoslynManager
     {
@@ -115,9 +117,13 @@ namespace ArcadesBot
 
     public class RoslynGlobals
     {
+        public IServiceProvider Provider { get; }
         public CustomCommandContext Context { get; }
 
-        public RoslynGlobals(IServiceProvider provider, CustomCommandContext context) 
-            => Context = context;
+        public RoslynGlobals(IServiceProvider provider, CustomCommandContext context)
+        {
+            Provider = provider;
+            Context = context;
+        }
     }
 }

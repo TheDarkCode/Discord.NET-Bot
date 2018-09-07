@@ -1,19 +1,24 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using ArcadesBot.Common;
+using ArcadesBot.Interactive.Callbacks;
+using ArcadesBot.Interactive.Criteria;
+using ArcadesBot.Interactive.Paginator;
+using ArcadesBot.Interactive.ReactionResponse;
+using ArcadesBot.Services.BlackJack;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using System.Collections.Generic;
-using System.Linq;
-using ArcadesBot;
 
-namespace Discord.Addons.Interactive
+namespace ArcadesBot.Interactive
 {
     public class InteractiveService : IDisposable
     {
         public DiscordSocketClient Discord { get; }
 
-        private Dictionary<ulong, IReactionCallback> _callbacks;
-        private TimeSpan _defaultTimeout;
+        private readonly Dictionary<ulong, IReactionCallback> _callbacks;
+        private readonly TimeSpan _defaultTimeout;
         private BlackJackService _blackJackService { get; }
 
         public InteractiveService(DiscordSocketClient discord, BlackJackService blackJackService, TimeSpan? defaultTimeout = null)
@@ -62,11 +67,11 @@ namespace Discord.Addons.Interactive
                 return null;
         }
 
-        public async Task<IUserMessage> ReplyAndDeleteAsync(CustomCommandContext context, string content, bool isTTS = false, Embed embed = null, TimeSpan? timeout = null, RequestOptions options = null)
+        public async Task<IUserMessage> ReplyAndDeleteAsync(CustomCommandContext context, string content, bool isTts = false, Embed embed = null, TimeSpan? timeout = null, RequestOptions options = null)
         {
             timeout = timeout ?? _defaultTimeout;
-            var message = await context.Channel.SendMessageAsync(content, isTTS, embed, options).ConfigureAwait(false);
-            _ = Task.Delay(timeout.Value)
+            var message = await context.Channel.SendMessageAsync(content, isTts, embed, options).ConfigureAwait(false);
+            await Task.Delay(timeout.Value)
                 .ContinueWith(_ => message.DeleteAsync().ConfigureAwait(false))
                 .ConfigureAwait(false);
             return message;
@@ -105,7 +110,7 @@ namespace Discord.Addons.Interactive
                 return;
             if (callback.RunMode == RunMode.Async)
             {
-                _ = Task.Run(async () =>
+                await Task.Run(async () =>
                 {
                     if (await callback.HandleCallbackAsync(reaction).ConfigureAwait(false))
                         RemoveReactionCallback(message.Id);

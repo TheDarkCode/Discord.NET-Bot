@@ -1,9 +1,9 @@
 ﻿using System;
 
-namespace ArcadesBot
+namespace ArcadesBot.CommandExtensions.Attribute
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Parameter)]
-    public class UsageAttribute : Attribute
+    public class UsageAttribute : System.Attribute
     {
         public string Text { get; }
 

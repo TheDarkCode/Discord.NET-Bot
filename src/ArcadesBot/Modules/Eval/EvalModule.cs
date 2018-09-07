@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
+using ArcadesBot.Common;
+using ArcadesBot.Services;
 
 namespace ArcadesBot.Modules.Eval
 {

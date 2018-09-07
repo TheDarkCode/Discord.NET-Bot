@@ -1,10 +1,10 @@
-﻿using System;
-using System.Threading.Tasks;
-using Discord;
-using Discord.Addons.Interactive;
+﻿using System.Threading.Tasks;
+using ArcadesBot.CommandExtensions.Attribute;
+using ArcadesBot.Interactive;
+using ArcadesBot.Services.BlackJack;
 using Discord.Commands;
 
-namespace ArcadesBot
+namespace ArcadesBot.Modules.Games
 {
     [Group("Blackjack"), Alias("b")]
     [Summary("Blackjack Commands")]

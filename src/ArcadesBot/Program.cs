@@ -2,6 +2,9 @@
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
+using ArcadesBot.Handlers;
+using ArcadesBot.Services;
+using ArcadesBot.Utility;
 
 namespace ArcadesBot
 {

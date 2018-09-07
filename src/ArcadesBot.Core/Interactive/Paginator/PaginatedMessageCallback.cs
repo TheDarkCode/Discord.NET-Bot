@@ -1,28 +1,31 @@
-﻿using ArcadesBot;
-using Discord.Commands;
-using Discord.WebSocket;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using ArcadesBot.Common;
+using ArcadesBot.Interactive.Callbacks;
+using ArcadesBot.Interactive.Criteria;
+using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
 
-namespace Discord.Addons.Interactive
+namespace ArcadesBot.Interactive.Paginator
 {
     public class PaginatedMessageCallback : IReactionCallback
     {
         public CustomCommandContext Context { get; }
-        public InteractiveService Interactive { get; private set; }
+        public InteractiveService Interactive { get; }
         public IUserMessage Message { get; private set; }
 
         public RunMode RunMode => RunMode.Sync;
-        public ICriterion<SocketReaction> Criterion => _criterion;
-        public TimeSpan? Timeout => options.Timeout;
+        public ICriterion<SocketReaction> Criterion { get; }
 
-        private readonly ICriterion<SocketReaction> _criterion;
+        public TimeSpan? Timeout => _options.Timeout;
+
         private readonly PaginatedMessage _pager;
 
-        private PaginatedAppearanceOptions options => _pager.Options;
-        private readonly int pages;
-        private int page = 1;
+        private PaginatedAppearanceOptions _options => _pager.Options;
+        private readonly int _pages;
+        private int _page = 1;
         
 
         public PaginatedMessageCallback(InteractiveService interactive,
@@ -32,9 +35,9 @@ namespace Discord.Addons.Interactive
         {
             Interactive = interactive;
             Context = sourceContext;
-            _criterion = criterion ?? new EmptyCriterion<SocketReaction>();
+            Criterion = criterion ?? new EmptyCriterion<SocketReaction>();
             _pager = pager;
-            pages = _pager.Pages.Count();
+            _pages = _pager.Pages.Count();
         }
 
         public async Task DisplayAsync()
@@ -44,33 +47,32 @@ namespace Discord.Addons.Interactive
             Message = message;
             Interactive.AddReactionCallback(message, this);
             // Reactions take a while to add, don't wait for them
-            _ = Task.Run(async () =>
+            await Task.Run(async () =>
             {
-                await message.AddReactionAsync(options.First);
-                await message.AddReactionAsync(options.Back);
-                await message.AddReactionAsync(options.Next);
-                await message.AddReactionAsync(options.Last);
+                await message.AddReactionAsync(_options.First);
+                await message.AddReactionAsync(_options.Back);
+                await message.AddReactionAsync(_options.Next);
+                await message.AddReactionAsync(_options.Last);
 
                 var manageMessages = (Context.Channel is IGuildChannel guildChannel)
                     ? (Context.User as IGuildUser).GetPermissions(guildChannel).ManageMessages
                     : false;
 
-                if (options.JumpDisplayOptions == JumpDisplayOptions.Always
-                    || (options.JumpDisplayOptions == JumpDisplayOptions.WithManageMessages && manageMessages))
-                    await message.AddReactionAsync(options.Jump);
+                if (_options.JumpDisplayOptions == JumpDisplayOptions.Always
+                    || (_options.JumpDisplayOptions == JumpDisplayOptions.WithManageMessages && manageMessages))
+                    await message.AddReactionAsync(_options.Jump);
 
-                await message.AddReactionAsync(options.Stop);
+                await message.AddReactionAsync(_options.Stop);
 
-                if (options.DisplayInformationIcon)
-                    await message.AddReactionAsync(options.Info);
+                if (_options.DisplayInformationIcon)
+                    await message.AddReactionAsync(_options.Info);
             });
-            // TODO: (Next major version) timeouts need to be handled at the service-level!
-            if (Timeout.HasValue && Timeout.Value != null)
+            if (Timeout.HasValue)
             {
-                _ = Task.Delay(Timeout.Value).ContinueWith(_ =>
+                await Task.Delay(Timeout.Value).ContinueWith(async _ =>
                 {
                     Interactive.RemoveReactionCallback(message);
-                    _ = Message.DeleteAsync();
+                    await Message.DeleteAsync();
                 });
             }
         }
@@ -79,34 +81,34 @@ namespace Discord.Addons.Interactive
         {
             var emote = reaction.Emote;
 
-            if (emote.Equals(options.First))
+            if (emote.Equals(_options.First))
             {
-                page = 1;
+                _page = 1;
             }
-            else if (emote.Equals(options.Next))
+            else if (emote.Equals(_options.Next))
             {
-                if (page >= pages)
+                if (_page >= _pages)
                     return false;
-                ++page;
+                ++_page;
             }
-            else if (emote.Equals(options.Back))
+            else if (emote.Equals(_options.Back))
             {
-                if (page <= 1)
+                if (_page <= 1)
                     return false;
-                --page;
+                --_page;
             }
-            else if (emote.Equals(options.Last))
+            else if (emote.Equals(_options.Last))
             {
-                page = pages;
+                _page = _pages;
             }
-            else if (emote.Equals(options.Stop))
+            else if (emote.Equals(_options.Stop))
             {
                 await Message.DeleteAsync().ConfigureAwait(false);
                 return true;
             }
-            else if (emote.Equals(options.Jump))
+            else if (emote.Equals(_options.Jump))
             {
-                _ = Task.Run(async () =>
+                await Task.Run(async () =>
                 {
                     var criteria = new Criteria<SocketMessage>()
                         .AddCriterion(new EnsureSourceChannelCriterion())
@@ -114,23 +116,23 @@ namespace Discord.Addons.Interactive
                         .AddCriterion(new EnsureIsIntegerCriterion());
                     var response = await Interactive.NextMessageAsync(Context, criteria, TimeSpan.FromSeconds(15));
                     var request = int.Parse(response.Content);
-                    if (request < 1 || request > pages)
+                    if (request < 1 || request > _pages)
                     {
-                        _ = response.DeleteAsync().ConfigureAwait(false);
-                        await Interactive.ReplyAndDeleteAsync(Context, options.Stop.Name);
+                        await response.DeleteAsync().ConfigureAwait(false);
+                        await Interactive.ReplyAndDeleteAsync(Context, _options.Stop.Name);
                         return;
                     }
-                    page = request;
-                    _ = response.DeleteAsync().ConfigureAwait(false);
+                    _page = request;
+                    await response.DeleteAsync().ConfigureAwait(false);
                     await RenderAsync().ConfigureAwait(false);
                 });
             }
-            else if (emote.Equals(options.Info))
+            else if (emote.Equals(_options.Info))
             {
-                await Interactive.ReplyAndDeleteAsync(Context, options.InformationText, timeout: options.InfoTimeout);
+                await Interactive.ReplyAndDeleteAsync(Context, _options.InformationText, timeout: _options.InfoTimeout);
                 return false;
             }
-            _ = Message.RemoveReactionAsync(reaction.Emote, reaction.User.Value);
+            await Message.RemoveReactionAsync(reaction.Emote, reaction.User.Value);
             await RenderAsync().ConfigureAwait(false);
             return false;
         }
@@ -140,8 +142,8 @@ namespace Discord.Addons.Interactive
             return new EmbedBuilder()
                 .WithAuthor(_pager.Author)
                 .WithColor(_pager.Color)
-                .WithDescription(_pager.Pages.ElementAt(page-1).ToString())
-                .WithFooter(f => f.Text = string.Format(options.FooterFormat, page, pages))
+                .WithDescription(_pager.Pages.ElementAt(_page-1).ToString())
+                .WithFooter(f => f.Text = string.Format(_options.FooterFormat, _page, _pages))
                 .WithTitle(_pager.Title)
                 .Build();
         }

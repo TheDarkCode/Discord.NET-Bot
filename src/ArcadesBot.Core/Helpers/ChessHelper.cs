@@ -1,9 +1,11 @@
-﻿using Discord;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ArcadesBot.Handlers;
+using ArcadesBot.Models.Chess;
+using Discord;
 
-namespace ArcadesBot
+namespace ArcadesBot.Helpers
 {
     public class ChessHelper
     {
@@ -15,8 +17,8 @@ namespace ArcadesBot
         public List<ChessMatchStatsModel> Stats
             => _chessHandler.Stats;
 
-        public List<ChessMatchStatsModel> GetStatsFromUser(ulong userId, ulong guildId) 
-            => Stats.Where(x => x.Participants.Contains(userId) && x.GuildId == guildId).ToList();
+        //public List<ChessMatchStatsModel> GetStatsFromUser(ulong userId, ulong guildId) 
+        //    => Stats.Where(x => x.Participants.Contains(userId) && x.GuildId == guildId).ToList();
 
         public ChessChallengeModel GetChallenge(ulong guildId, ulong channelId, ulong invokerId, bool overRide = false)
         {
@@ -37,8 +39,8 @@ namespace ArcadesBot
         public ChessMatchModel GetMatch(ulong guildId, ulong channelId, ulong invokerId) 
             => _chessHandler.Matches.FirstOrDefault(x => x.GuildId == guildId && x.ChannelId == channelId && (x.ChallengeeId == invokerId || x.ChallengerId == invokerId) && x.Winner == 1);
 
-        public ChessMatchModel GetMatchByStatId(string id) 
-            => _chessHandler.Matches.FirstOrDefault(x => x.IdOfStat == id);
+        //public ChessMatchModel GetMatchByStatId(string id) 
+        //    => _chessHandler.Matches.FirstOrDefault(x => x.IdOfStat == id);
 
 
         public ChessChallengeModel GetChallenge(string id) 
@@ -66,6 +68,7 @@ namespace ArcadesBot
             switch (matchStatus.Status)
             {
                 case Cause.Checkmate:
+                    // ReSharper disable once PossibleInvalidOperationException
                     match.Winner = (ulong) matchStatus.WinnerId;
                     match.EndBy = Cause.Checkmate;
                     break;

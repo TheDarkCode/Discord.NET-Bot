@@ -1,4 +1,6 @@
-﻿namespace ArcadesBot
+﻿using ArcadesBot.Models;
+
+namespace ArcadesBot.Handlers
 {
     public class GuildHandler
     {

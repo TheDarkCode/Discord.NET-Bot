@@ -3,6 +3,7 @@ using Discord.Commands;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using ArcadesBot.Common;
 
 namespace ArcadesBot.Modules
 {

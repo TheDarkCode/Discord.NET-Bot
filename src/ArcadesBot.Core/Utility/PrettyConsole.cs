@@ -1,11 +1,10 @@
-﻿using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using System;
-using System.Threading.Tasks;
+﻿using System;
 
-namespace ArcadesBot
+namespace ArcadesBot.Utility
 {
+    /// <summary>
+    /// Everything regarding logging messages to the console
+    /// </summary>
     public static class PrettyConsole
     {
         /// <summary> Write a string to the console on an existing line. </summary>
@@ -40,6 +39,12 @@ namespace ArcadesBot
             Console.Write(Environment.NewLine + text);
         }
 
+        /// <summary>
+        /// Log message to the console.
+        /// </summary>
+        /// <param name="severity">How severe the message is.</param>
+        /// <param name="source">The source of the message.</param>
+        /// <param name="message">The message itself.</param>
         public static void Log(object severity, string source, string message)
         {
             NewLine($"{DateTime.Now:hh:mm:ss} ", ConsoleColor.DarkGray);

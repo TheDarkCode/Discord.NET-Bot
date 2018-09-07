@@ -1,19 +1,23 @@
-﻿using ChessDotNet;
-using Discord;
-using SixLabors.Fonts;
-using SixLabors.ImageSharp;
-using SixLabors.Primitives;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using ArcadesBot.Common;
+using ArcadesBot.Helpers;
+using ArcadesBot.Models.Chess;
+using ArcadesBot.Utility;
+using ChessDotNet;
+using Discord;
+using SixLabors.Fonts;
+using SixLabors.ImageSharp;
+using SixLabors.Primitives;
 using File = ChessDotNet.File;
 using Image = SixLabors.ImageSharp.Image;
 
-namespace ArcadesBot
+namespace ArcadesBot.Services.Chess
 {
     public class ChessService
     {
@@ -119,8 +123,8 @@ namespace ArcadesBot
             if (match == null)
                 throw new ChessException("You are not currently in a game");
 
-            var moves = match.HistoryList.Select(x => x.Move);
-            var game = moves.Count() != 0
+            var moves = match.HistoryList.Select(x => x.Move).ToList();
+            var game = moves.Count != 0
                 ? new ChessGame(moves, true)
                 : new ChessGame();
             var whoseTurn = game.WhoseTurn;
@@ -135,8 +139,10 @@ namespace ArcadesBot
             var destY = moveInput[3].ToString();
 
             var positionEnumValues = (IEnumerable<File>) Enum.GetValues(typeof(File));
-            var sourcePositionX = positionEnumValues.Single(x => x.ToString("g") == sourceX);
-            var destPositionX = positionEnumValues.Single(x => x.ToString("g") == destX);
+
+            var enumValues = positionEnumValues.ToList();
+            var sourcePositionX = enumValues.Single(x => x.ToString("g") == sourceX);
+            var destPositionX = enumValues.Single(x => x.ToString("g") == destX);
 
             var originalPosition = new Position(sourcePositionX, int.Parse(sourceY));
             var newPosition = new Position(destPositionX, int.Parse(destY));
@@ -210,9 +216,9 @@ namespace ArcadesBot
                 var blackAvatarData = Image.Load(await httpClient.GetByteArrayAsync(match.BlackAvatarUrl));
                 httpClient.Dispose();
 
-                var moves = match.HistoryList.Select(x => x.Move);
+                var moves = match.HistoryList.Select(x => x.Move).ToList();
 
-                var game = moves.Count() != 0 ? new ChessGame(moves, true) : new ChessGame();
+                var game = moves.Count != 0 ? new ChessGame(moves, true) : new ChessGame();
 
                 var boardPieces = game.GetBoard();
 

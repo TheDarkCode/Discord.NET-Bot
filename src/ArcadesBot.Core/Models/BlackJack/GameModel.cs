@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ArcadesBot
+namespace ArcadesBot.Models.BlackJack
 {
     public class GameModel
     {

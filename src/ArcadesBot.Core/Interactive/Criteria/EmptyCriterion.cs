@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using ArcadesBot;
-using Discord.Commands;
-using Discord.WebSocket;
+﻿using System.Threading.Tasks;
+using ArcadesBot.Common;
 
-namespace Discord.Addons.Interactive
+namespace ArcadesBot.Interactive.Criteria
 {
     public class EmptyCriterion<T> : ICriterion<T>
     {

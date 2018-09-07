@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
-using ArcadesBot;
-using Discord.Commands;
+using ArcadesBot.Common;
+using ArcadesBot.Interactive.Criteria;
 using Discord.WebSocket;
 
-namespace Discord.Addons.Interactive
+namespace ArcadesBot.Interactive.Paginator
 {
     internal class EnsureReactionFromSourceUserCriterion : ICriterion<SocketReaction>
     {

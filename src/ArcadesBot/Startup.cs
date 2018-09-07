@@ -8,7 +8,15 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Discord.Addons.Interactive;
+using ArcadesBot.CommandExtensions.TypeReaders;
+using ArcadesBot.Handlers;
+using ArcadesBot.Helpers;
+using ArcadesBot.Interactive;
+using ArcadesBot.Models;
+using ArcadesBot.Services;
+using ArcadesBot.Services.BlackJack;
+using ArcadesBot.Services.Chess;
+using ArcadesBot.Utility;
 
 namespace ArcadesBot
 {

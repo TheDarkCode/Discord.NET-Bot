@@ -1,10 +1,12 @@
-﻿using Discord;
-using Discord.Commands;
-using System;
+﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using ArcadesBot.Models;
+using ArcadesBot.Utility;
+using Discord;
+using Discord.Commands;
 
-namespace ArcadesBot
+namespace ArcadesBot.Common
 {
     public class Base : ModuleBase<CustomCommandContext>
     {
@@ -27,13 +29,14 @@ namespace ArcadesBot
             DocumentType document = DocumentType.None)
         {
             await Context.Channel.TriggerTypingAsync();
-            _ = Task.Run(() => SaveDocuments(document));
+            await Task.Run(() => SaveDocuments(document));
             if(embed == null)
                 return await base.ReplyAsync(message);
 
             return await base.ReplyAsync(message, false, embed.Build());
         }
 
+        // ReSharper disable once UnusedMember.Global
         public async Task<IUserMessage> SendFileAsync(Stream stream, string fileName, string text = "",
             EmbedBuilder embed = null)
         {

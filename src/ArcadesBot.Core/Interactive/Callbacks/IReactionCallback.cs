@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
-using ArcadesBot;
+using ArcadesBot.Common;
+using ArcadesBot.Interactive.Criteria;
 using Discord.Commands;
 using Discord.WebSocket;
 
-namespace Discord.Addons.Interactive
+namespace ArcadesBot.Interactive.Callbacks
 {
     public interface IReactionCallback
     {

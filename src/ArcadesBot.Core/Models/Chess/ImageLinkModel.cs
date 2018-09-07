@@ -1,4 +1,4 @@
-﻿namespace ArcadesBot
+﻿namespace ArcadesBot.Models.Chess
 {
     public class ImageLinkModel
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ArcadesBot
+namespace ArcadesBot.Models
 {
     public class TagModel
     {

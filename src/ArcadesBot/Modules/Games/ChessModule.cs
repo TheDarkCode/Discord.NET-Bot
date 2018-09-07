@@ -1,9 +1,14 @@
-﻿using Discord;
+﻿using System.Threading.Tasks;
+using ArcadesBot.CommandExtensions.Attribute;
+using ArcadesBot.Common;
+using ArcadesBot.Helpers;
+using ArcadesBot.Models.Chess;
+using ArcadesBot.Services.Chess;
+using ArcadesBot.Utility;
+using Discord;
 using Discord.Commands;
-using System.IO;
-using System.Threading.Tasks;
 
-namespace ArcadesBot
+namespace ArcadesBot.Modules.Games
 {
     [Name("Chess")]
     [Summary("All the commands related to chess")]
@@ -138,13 +143,13 @@ namespace ArcadesBot
             }
         }
 
-        [RequireContext(ContextType.Guild)]
-        [Command("stats")]
-        [Summary("Currently a filler command"), Usage("stats")]
-        public async Task StatsAsync()
-        {
-
-        }
+        //[RequireContext(ContextType.Guild)]
+        //[Command("stats")]
+        //[Summary("Currently a filler command"), Usage("stats")]
+        //public async Task StatsAsync()
+        //{
+        //
+        //}
 
 
         [RequireContext(ContextType.Guild)]

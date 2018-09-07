@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace ArcadesBot
+namespace ArcadesBot.Services.Chess
 {
     [Serializable]
     public class ChessException : Exception

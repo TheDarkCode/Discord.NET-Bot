@@ -1,9 +1,12 @@
-﻿using Discord;
-using Discord.WebSocket;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ArcadesBot.Handlers;
+using ArcadesBot.Models;
+using Discord;
+using Discord.WebSocket;
 
-namespace ArcadesBot
+namespace ArcadesBot.Helpers
 {
     public class GuildHelper
     {
@@ -79,10 +82,8 @@ namespace ArcadesBot
             var getRole = guild.GetRole(id);
             if (getRole != null)
                 return (true, id);
-            var findRole = guild.Roles.FirstOrDefault(x => x.Name.ToLower() == role.ToLower());
-            if (findRole != null)
-                return (true, findRole.Id);
-            return (false, 0);
+            var findRole = guild.Roles.FirstOrDefault(x => string.Equals(x.Name, role, StringComparison.CurrentCultureIgnoreCase));
+            return findRole != null ? (true, findRole.Id) : ((bool, ulong)) (false, 0);
         }
 
         public (bool Added, string Message) ListCheck<T>(List<T> collection, object value, string objectName,
@@ -90,18 +91,21 @@ namespace ArcadesBot
         {
             if (collection.Contains((T) value))
                 return (false, $"{objectName} already exists in {collectionName}.");
-            if (collection.Count == collection.Capacity)
-                return (false, "Reached max number of entries");
-
-            return (true, $"`{objectName}` has been added to {collectionName}");
+            return collection.Count == collection.Capacity ? (false, "Reached max number of entries") : (true, $"`{objectName}` has been added to {collectionName}");
         }
 
-        public bool HierarchyCheck(IGuild guild, IGuildUser user)
+        public SocketGuildChannel GetGuildChannel(string guildId, ulong channelId)
         {
-            var guildSocket = guild as SocketGuild;
-            var highestRole = guildSocket.CurrentUser.Roles.OrderByDescending(x => x.Position).FirstOrDefault()
-                .Position;
-            return (user as SocketGuildUser).Roles.Any(x => x.Position > highestRole);
+            var guild = _client.GetGuild(ulong.Parse(guildId));
+            return guild.Channels.FirstOrDefault(x => x.Id == channelId);
         }
+
+        //public bool HierarchyCheck(IGuild guild, IGuildUser user)
+        //{
+        //    var guildSocket = guild as SocketGuild;
+        //    var highestRole = guildSocket.CurrentUser.Roles.OrderByDescending(x => x.Position).FirstOrDefault()
+        //        .Position;
+        //    return (user as SocketGuildUser).Roles.Any(x => x.Position > highestRole);
+        //}
     }
 }

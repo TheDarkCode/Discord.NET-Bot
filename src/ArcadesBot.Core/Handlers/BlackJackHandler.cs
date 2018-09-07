@@ -1,5 +1,9 @@
-﻿namespace ArcadesBot
+﻿using System.Diagnostics.CodeAnalysis;
+using ArcadesBot.Models.BlackJack;
+
+namespace ArcadesBot.Handlers
 {
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public class BlackJackHandler
     {
         public BlackJackHandler(DatabaseHandler database) 
@@ -16,7 +20,7 @@
         public void AddGame(ulong id)
         {
             var refId = $"{id}";
-            _database.Create<GameModel>(ref refId, new GameModel {});
+            _database.Create<GameModel>(ref refId, new GameModel());
         }
     }
 }

@@ -1,13 +1,20 @@
-﻿using Discord;
+﻿using System;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
+using ArcadesBot.Common;
+using ArcadesBot.Handlers;
+using ArcadesBot.Helpers;
+using ArcadesBot.Models;
+using ArcadesBot.Utility;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
 
-namespace ArcadesBot
+namespace ArcadesBot.Services
 {
     public class CommandManager
     {
@@ -16,6 +23,7 @@ namespace ArcadesBot
         private GuildHelper _guildhelper { get; }
         private GuildHandler _guildhandler { get; }
         private WebhookService _webhookservice { get; }
+        private DatabaseHandler _databaseHandler { get; }
         private Random _random { get; }
         private IServiceProvider _provider { get; }
 
@@ -25,6 +33,7 @@ namespace ArcadesBot
             _discord = _provider.GetService<DiscordSocketClient>();
             _commands = _provider.GetService<CommandService>();
             _guildhelper = _provider.GetService<GuildHelper>();
+            _databaseHandler = _provider.GetService<DatabaseHandler>();
             _guildhandler = _provider.GetService<GuildHandler>();
             _webhookservice = _provider.GetService<WebhookService>();
             _random = _provider.GetService<Random>();
@@ -39,9 +48,42 @@ namespace ArcadesBot
             _discord.GuildAvailable += GuildAvailable;
             _discord.UserJoined += UserJoinedAsync;
             _discord.UserLeft += UserLeftAsync;
+            _discord.MessageDeleted += DiscordOnMessageDeleted;
 
             PrettyConsole.Log(LogSeverity.Info, "Commands", $"Loaded {_commands.Modules.Count()} modules with {_commands.Commands.Count()} commands");
-        }   
+        }
+
+        internal async Task DiscordOnMessageDeleted(Cacheable<IMessage, ulong> cache, ISocketMessageChannel channel)
+        {
+            
+            var guildChannel = channel is SocketGuildChannel ? (SocketGuildChannel) channel : null;
+            if (guildChannel == null)
+                return;
+            var server = _guildhandler.GetGuild(guildChannel.Guild.Id);
+            if (!server.Mod.LogDeletedMessages)
+                return;
+            var message = cache.HasValue ? cache.Value : await cache.GetOrDownloadAsync();
+            if (string.IsNullOrWhiteSpace(message.Content) || message.Author.IsBot)
+                return;
+
+            var logChannel = _guildhelper.GetGuildChannel(server.Id, server.Mod.TextChannel) as IMessageChannel;
+            var embed = new EmbedBuilder().WithErrorColor().WithTitle($"Deleted message in #{guildChannel.Name}")
+                .AddField("Content", message.Content ?? message.Attachments.FirstOrDefault().Url)
+                .AddField("Author", $"{message.Author.Mention} ({message.Author.Username}#{message.Author.DiscriminatorValue})");
+            await logChannel.SendMessageAsync(embed: embed.Build());
+
+
+
+            //logChannel.s
+            //{
+            //    MessageId = message.Id,
+            //    ChannelId = channel.Id,
+            //    DateTimeOffset = MiscExt.Central,
+            //    AuthorId = message.Author.Id,
+            //    Content = message.Content ?? message.Attachments.FirstOrDefault().Url
+            //});
+            //Db.Save<ServerObject>(server, (channel as SocketGuildChannel).Guild.Id);
+        }
 
         internal async Task CommandHandlerAsync(SocketMessage message)
         {
@@ -91,7 +133,7 @@ namespace ArcadesBot
                 case CommandError.Unsuccessful:
                     break;
             }
-            _ = Task.Run(() => RecordCommand(command, context));
+             await Task.Run(() => RecordCommand(command, context));
         }
         internal void RecordCommand(CommandInfo command, CustomCommandContext context)
         {

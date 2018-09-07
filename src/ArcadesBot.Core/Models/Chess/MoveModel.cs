@@ -1,7 +1,7 @@
 ﻿using System;
 using ChessDotNet;
 
-namespace ArcadesBot
+namespace ArcadesBot.Models.Chess
 {
     public class ChessMoveModel
     {

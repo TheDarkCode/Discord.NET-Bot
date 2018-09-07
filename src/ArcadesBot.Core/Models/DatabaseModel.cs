@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json;
-using System.Security.Cryptography.X509Certificates;
+﻿using System.Security.Cryptography.X509Certificates;
+using Newtonsoft.Json;
 
-namespace ArcadesBot
+namespace ArcadesBot.Models
 {
     public class DatabaseModel
     {

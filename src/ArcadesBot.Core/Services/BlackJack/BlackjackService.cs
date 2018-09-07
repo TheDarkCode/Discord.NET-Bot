@@ -1,11 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using ArcadesBot.Handlers;
 
-namespace ArcadesBot
+namespace ArcadesBot.Services.BlackJack
 {
     public class BlackJackService
     {
         private AssetService _assetService { get; }
+        // ReSharper disable once UnusedAutoPropertyAccessor.Local
         private BlackJackHandler _blackJackHandler { get; }
         public BlackJackService(AssetService assetService, BlackJackHandler blackJackHandler)
         {
@@ -19,7 +21,7 @@ namespace ArcadesBot
         {
             if (_matchList.All(x => x.Key != playerId) && _matchList.Count != 0)
                 return false;
-            _matchList.Add(playerId, new BlackJackManager(_assetService, _blackJackHandler));
+            _matchList.Add(playerId, new BlackJackManager(_assetService));
             return true;
         }
 

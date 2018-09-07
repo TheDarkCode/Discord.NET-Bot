@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
-using ArcadesBot;
-using Discord.Commands;
+using ArcadesBot.Common;
+using Discord;
 
-namespace Discord.Addons.Interactive
+namespace ArcadesBot.Interactive.Criteria
 {
     public class EnsureSourceChannelCriterion : ICriterion<IMessage>
     {

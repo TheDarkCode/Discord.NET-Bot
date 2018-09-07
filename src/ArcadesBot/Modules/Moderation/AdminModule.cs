@@ -1,14 +1,19 @@
-﻿using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using Newtonsoft.Json;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ArcadesBot.CommandExtensions.Preconditions;
+using ArcadesBot.Common;
+using ArcadesBot.Models;
+using ArcadesBot.Utility;
+using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+using Newtonsoft.Json;
 
-namespace ArcadesBot
+namespace ArcadesBot.Modules.Moderation
 {
     [Name("Admin"), RequirePermission(AccessLevel.Administrator), RequireBotPermission(ChannelPermission.SendMessages)]
     [Summary("Several Admin commands")]
@@ -20,7 +25,7 @@ namespace ArcadesBot
             var embed = new EmbedBuilder()
                .WithAuthor($"{Context.Guild} Settings", Context.Guild.IconUrl)
                .AddField("General Information",
-                $"```ebnf\n" +
+                "```ebnf\n" +
                 $"Prefix                : {Context.Server.Prefix}\n" +
                 $"Join Channel          : #{Context.Guild.CheckChannel(Context.Server.JoinWebhook.TextChannel)}\n" +
                 $"Leave Channel         : #{Context.Guild.CheckChannel(Context.Server.LeaveWebhook.TextChannel)}\n" +
@@ -28,14 +33,16 @@ namespace ArcadesBot
                 $"Leave Messages        : {Context.Server.LeaveMessages.Count}\n" +
                 $"AFK Users             : {Context.Server.Afk.Count}\n" +
                 $"Self Assignable Roles : {Context.Server.AssignableRoles.Count}\n" +
-                $"```", false)
+                "```")
                 .AddField("Admin Information",
-                $"```diff\n" +
+                "```diff\n" +
                 $"+ Join Role           : @{Context.Guild.CheckRole(Context.Server.Mod.JoinRole)}\n" +
                 $"+ Mute Role           : @{Context.Guild.CheckRole(Context.Server.Mod.MuteRole)}\n" +
                 $"+ Blacklisted Users   : {Context.Server.Profiles.Count(x => x.Value.IsBlacklisted)}\n" +
                 $"+ Blacklisted Channels: {Context.Server.BlackListedChannels.Count}\n" +
-                $"```", false);
+                $"+ Mod Channel         : #{Context.Server.Mod.TextChannel}\n" +
+                $"+ Log Deleted Messages: {Context.Server.Mod.LogDeletedMessages}\n" +
+                "```");
             return ReplyEmbedAsync(embed: embed);
         }
 
@@ -71,7 +78,7 @@ namespace ArcadesBot
         }
 
         [Command("Set"), Summary("Sets certain values for current server's config.")]
-        public Task SetAsync([Summary("Valid setting types are: \n - Prefix\n - JoinChannel\n - JoinRole\n - MuteRole\n - LeaveChannel")]SettingType settingType, [Remainder, Summary("The value of the setting you are changing")] string value = null)
+        public Task SetAsync([Summary("Valid setting types are: \n - Prefix\n - JoinChannel\n - JoinRole\n - MuteRole\n - LeaveChannel\n - ModChannel\n - ToggleLogDeletedMessages")]SettingType settingType, [Remainder, Summary("The value of the setting you are changing")] string value = null)
         {
             value = value ?? string.Empty;
             var channelCheck = Context.GuildHelper.GetChannelId(Context.Guild, value);
@@ -109,6 +116,18 @@ namespace ArcadesBot
                             Name = Context.Client.CurrentUser.Username
                         }).Result;
                     break;
+                case SettingType.ModChannel:
+                    if(channelCheck.Item1 == false)
+                        return ReplyEmbedAsync($" ❌ {settingType} value was provided in incorrect format. try mentioning the channel?");
+                    Context.Server.Mod.TextChannel = channelCheck.Item2;
+                    break;
+                case SettingType.ToggleLogDeletedMessages:
+                    if (Context.Server.Mod.TextChannel == 0)
+                        return ReplyEmbedAsync(" ❌ The mod channel needs to be defined first before you can log deleted messages");
+                    Context.Server.Mod.LogDeletedMessages = !Context.Server.Mod.LogDeletedMessages;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(settingType), settingType, null);
             }
             return ReplyEmbedAsync($"{settingType} has been updated 👍", document: DocumentType.Server);
         }
@@ -152,7 +171,7 @@ namespace ArcadesBot
                 if (property.PropertyType == typeof(Dictionary<ulong, UserProfile>))
                     property.SetValue(Context.Server, new Dictionary<ulong, UserProfile>());
             }
-            return ReplyEmbedAsync($"Guild Config has been recreated 👍", document: DocumentType.Server);
+            return ReplyEmbedAsync("Guild Config has been recreated 👍", document: DocumentType.Server);
         }
 
         [Command("SelfRoles")]
@@ -266,7 +285,9 @@ namespace ArcadesBot
             JoinRole,
             JoinChannel,
             LeaveChannel,
-            MuteRole
+            MuteRole,
+            ModChannel,
+            ToggleLogDeletedMessages
         }
     }
 }

@@ -1,6 +1,6 @@
-﻿using System.Drawing;
+﻿using ArcadesBot.Services;
 
-namespace ArcadesBot
+namespace ArcadesBot.Models.BlackJack
 {
     public class CardModel
     {
